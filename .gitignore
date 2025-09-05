@@ -153,3 +153,6 @@ $RECYCLE.BIN/
 .fuse_hidden*
 .directory
 .Trash-*
+
+# Claude Code documentation
+CLAUDE.md
