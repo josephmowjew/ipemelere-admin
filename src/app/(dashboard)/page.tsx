@@ -7,6 +7,8 @@
 
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 /**
  * Quick stats card component
@@ -17,19 +19,19 @@ const StatsCard: React.FC<{
   change: string;
   icon: React.ReactNode;
 }> = ({ title, value, change, icon }) => (
-  <div className="bg-white overflow-hidden shadow rounded-lg">
-    <div className="p-5">
+  <Card>
+    <CardContent className="p-6">
       <div className="flex items-center">
         <div className="flex-shrink-0">
           {icon}
         </div>
         <div className="ml-5 w-0 flex-1">
           <dl>
-            <dt className="text-sm font-medium text-gray-500 truncate">
+            <dt className="text-sm font-medium text-muted-foreground truncate">
               {title}
             </dt>
             <dd>
-              <div className="text-lg font-medium text-gray-900">
+              <div className="text-lg font-medium text-foreground">
                 {value}
               </div>
             </dd>
@@ -37,12 +39,12 @@ const StatsCard: React.FC<{
         </div>
       </div>
       <div className="mt-4">
-        <span className="text-sm text-gray-600">
+        <span className="text-sm text-muted-foreground">
           {change} from last month
         </span>
       </div>
-    </div>
-  </div>
+    </CardContent>
+  </Card>
 );
 
 /**
@@ -71,8 +73,8 @@ const DashboardPage: React.FC = () => {
           value="247"
           change="+12%"
           icon={
-            <div className="bg-blue-500 rounded-md p-3">
-              <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="bg-primary rounded-md p-3">
+              <svg className="h-6 w-6 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
             </div>
@@ -84,8 +86,8 @@ const DashboardPage: React.FC = () => {
           value="89"
           change="+5%"
           icon={
-            <div className="bg-green-500 rounded-md p-3">
-              <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="bg-secondary rounded-md p-3">
+              <svg className="h-6 w-6 text-secondary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM9 3a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
