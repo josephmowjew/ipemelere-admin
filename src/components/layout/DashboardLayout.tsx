@@ -1,244 +1,237 @@
 /**
- * Dashboard Layout - Loop-Safe Auth Checks
- * Main layout component with authentication verification
+ * DashboardLayout Component - Main layout wrapper for dashboard pages
+ * Following composition pattern and responsive design principles
  */
 
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useAdminGuard } from '@/hooks/useRouteGuard';
-import { useTokenManager } from '@/hooks/useTokenManager';
+import { useLayout } from '@/contexts/LayoutContext';
+import { Sidebar } from './Sidebar';
+import { TopNavbar } from './TopNavbar';
+import { Breadcrumb } from './Breadcrumb';
+import { NAVIGATION_ITEMS } from '@/constants/navigation';
+import { type DashboardLayoutProps } from '@/types/layout';
+import { cn } from '@/lib/utils';
 
-/**
- * Loading component
- */
-const LoadingSpinner: React.FC = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-      <p className="mt-4 text-sm text-gray-600">Loading dashboard...</p>
-    </div>
-  </div>
-);
+export function DashboardLayout({ 
+  children, 
+  title, 
+  breadcrumbs = [], 
+  actions,
+  className 
+}: DashboardLayoutProps) {
+  const { user } = useAuth();
+  const { sidebarOpen, sidebarCollapsed, toggleSidebar, collapseSidebar, isMobile } = useLayout();
 
-/**
- * Unauthorized component
- */
-const UnauthorizedAccess: React.FC = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50">
-    <div className="text-center max-w-md mx-auto">
-      <div className="mb-4">
-        <svg className="mx-auto h-12 w-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.334 16.5c-.77.833.192 2.5 1.732 2.5z" />
-        </svg>
-      </div>
-      <h1 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h1>
-      <p className="text-sm text-gray-600 mb-4">
-        You don't have permission to access this area. Only administrators can access the dashboard.
-      </p>
-      <button
-        onClick={() => window.location.href = '/login'}
-        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-      >
-        Go to Login
-      </button>
-    </div>
-  </div>
-);
-
-/**
- * Dashboard Header Component
- */
-const DashboardHeader: React.FC<{ 
-  userName?: string;
-  onLogout: () => void;
-}> = ({ userName, onLogout }) => (
-  <header className="bg-white shadow-sm border-b border-gray-200">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex justify-between items-center h-16">
-        <div className="flex items-center">
-          <h1 className="text-xl font-semibold text-gray-900">
-            Ganyu Ipemelere Admin
-          </h1>
-        </div>
-        
-        <div className="flex items-center space-x-4">
-          {userName && (
-            <span className="text-sm text-gray-700">
-              Welcome, {userName}
-            </span>
-          )}
-          
-          <button
-            onClick={onLogout}
-            className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            Logout
-          </button>
-        </div>
-      </div>
-    </div>
-  </header>
-);
-
-/**
- * Dashboard Sidebar Component
- */
-const DashboardSidebar: React.FC = () => {
-  const navigationItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: 'home' },
-    { name: 'Analytics', href: '/dashboard/analytics', icon: 'chart' },
-    { name: 'Drivers', href: '/dashboard/drivers', icon: 'users' },
-    { name: 'Passengers', href: '/dashboard/passengers', icon: 'user-group' },
-    { name: 'Rides', href: '/dashboard/rides', icon: 'car' },
-    { name: 'Notifications', href: '/dashboard/notifications', icon: 'bell' },
-    { name: 'Documents', href: '/dashboard/documents', icon: 'document' },
+  // Mock notifications data - in real app, this would come from an API or store
+  const mockNotifications = [
+    {
+      id: '1',
+      title: 'New driver registration',
+      message: 'John Doe has submitted documents for verification',
+      type: 'info' as const,
+      timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
+      read: false,
+    },
+    {
+      id: '2',
+      title: 'System maintenance',
+      message: 'Scheduled maintenance tonight from 11 PM to 12 AM',
+      type: 'warning' as const,
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+      read: true,
+    }
   ];
 
   return (
-    <aside className="bg-gray-900 text-white w-64 min-h-screen">
-      <div className="p-4">
-        <nav className="space-y-2">
-          {navigationItems.map((item) => (
-            <a
-              key={item.name}
-              href={item.href}
-              className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
-            >
-              <span className="mr-3">
-                {/* Icon placeholder - you can replace with actual icons */}
-                <div className="w-5 h-5 bg-gray-600 rounded"></div>
-              </span>
-              {item.name}
-            </a>
-          ))}
-        </nav>
-      </div>
-    </aside>
-  );
-};
+    <div className="min-h-screen bg-background">
+      {/* Sidebar */}
+      <Sidebar
+        navigation={NAVIGATION_ITEMS}
+        isOpen={sidebarOpen}
+        onToggle={toggleSidebar}
+        isCollapsed={sidebarCollapsed}
+        onCollapse={collapseSidebar}
+      />
 
-/**
- * Token Status Indicator Component (for debugging)
- */
-const TokenStatusIndicator: React.FC = () => {
-  const { hasToken, isValid, timeUntilExpiry } = useTokenManager();
-  
-  // Only show in development
-  if (process.env.NODE_ENV !== 'development') {
-    return null;
-  }
-  
-  const formatTime = (ms: number | null) => {
-    if (!ms || ms <= 0) return 'Expired';
-    const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    return `${minutes}m ${seconds}s`;
-  };
-  
-  return (
-    <div className="fixed bottom-4 right-4 bg-black bg-opacity-75 text-white text-xs p-2 rounded max-w-xs">
-      <div>Token: {hasToken ? '✓' : '✗'}</div>
-      <div>Valid: {isValid ? '✓' : '✗'}</div>
-      <div>Expires: {formatTime(timeUntilExpiry)}</div>
+      {/* Mobile sidebar overlay */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+          onClick={toggleSidebar}
+        />
+      )}
+
+      {/* Main content area */}
+      <div className={cn(
+        'transition-all duration-300 min-h-screen flex flex-col',
+        sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-80'
+      )}>
+        {/* Top navigation */}
+        <TopNavbar
+          onSidebarToggle={toggleSidebar}
+          user={user ? {
+            name: `${user.firstName} ${user.lastName}`,
+            email: user.email,
+            avatar: user.profilePicture,
+            role: user.role
+          } : undefined}
+          notifications={mockNotifications}
+        />
+
+        {/* Page content */}
+        <main className="flex-1">
+          {/* Page header with breadcrumbs and actions */}
+          {(title || breadcrumbs.length > 0 || actions) && (
+            <PageHeader
+              title={title}
+              breadcrumbs={breadcrumbs}
+              actions={actions}
+            />
+          )}
+
+          {/* Page content wrapper */}
+          <div className={cn(
+            'px-4 sm:px-6 lg:px-8 py-6',
+            className
+          )}>
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
-};
-
-/**
- * Dashboard Layout Props
- */
-interface DashboardLayoutProps {
-  children: React.ReactNode;
 }
 
-/**
- * Main Dashboard Layout Component
- */
-export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-  // Auth hooks with primitive values (safe for useEffect)
-  const { 
-    isAuthenticated, 
-    isLoading, 
-    isInitialized,
-    isAdmin,
-    user,
-    logout,
-  } = useAuth({
-    autoInitialize: true,
-    enablePeriodicCheck: false, // Prevent loops
-  });
-  
-  // Route guard (handles redirects)
-  const guard = useAdminGuard();
-  
-  /**
-   * Memoized user display name
-   */
-  const userDisplayName = useMemo(() => {
-    if (!user) return undefined;
-    return `${user.firstName} ${user.lastName}`.trim() || user.email;
-  }, [user]);
-  
-  /**
-   * Memoized layout state
-   */
-  const layoutState = useMemo(() => ({
-    showLoading: !isInitialized || isLoading || guard.isLoading,
-    showUnauthorized: isInitialized && !isLoading && !guard.isLoading && !guard.isAllowed,
-    showDashboard: isInitialized && !isLoading && guard.isAllowed && isAuthenticated && isAdmin,
-  }), [
-    isInitialized,
-    isLoading,
-    guard.isLoading,
-    guard.isAllowed,
-    isAuthenticated,
-    isAdmin,
-  ]);
-  
-  // Show loading state
-  if (layoutState.showLoading) {
-    return <LoadingSpinner />;
+// Page header component with breadcrumbs and actions
+function PageHeader({
+  title,
+  breadcrumbs = [],
+  actions
+}: {
+  title?: string;
+  breadcrumbs?: Array<{ name: string; href?: string }>;
+  actions?: React.ReactNode;
+}) {
+  if (!title && breadcrumbs.length === 0 && !actions) {
+    return null;
   }
-  
-  // Show unauthorized state (shouldn't happen with proper routing)
-  if (layoutState.showUnauthorized) {
-    return <UnauthorizedAccess />;
-  }
-  
-  // Show dashboard layout
-  if (layoutState.showDashboard) {
-    return (
-      <div className="flex h-screen bg-gray-50">
-        <DashboardSidebar />
-        
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <DashboardHeader 
-            userName={userDisplayName}
-            onLogout={logout}
-          />
-          
-          <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
-            <div className="max-w-7xl mx-auto">
-              {children}
-            </div>
-          </main>
-        </div>
-        
-        <TokenStatusIndicator />
-      </div>
-    );
-  }
-  
-  // Fallback (should not reach here)
-  return <LoadingSpinner />;
-};
 
-/**
- * Memoized export to prevent unnecessary re-renders
- */
+  return (
+    <div className="border-b border-border bg-background">
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          {/* Left side - Title and breadcrumbs */}
+          <div className="flex-1 min-w-0">
+            {breadcrumbs.length > 0 && (
+              <div className="mb-1">
+                <Breadcrumb items={breadcrumbs} />
+              </div>
+            )}
+            {title && (
+              <h1 className="text-2xl font-bold text-foreground truncate">
+                {title}
+              </h1>
+            )}
+          </div>
+
+          {/* Right side - Actions */}
+          {actions && (
+            <div className="ml-4 flex items-center space-x-2">
+              {actions}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Specialized layout components for common patterns
+export function ListPageLayout({
+  title,
+  breadcrumbs,
+  children,
+  searchBar,
+  filterBar,
+  actions,
+  className
+}: {
+  title: string;
+  breadcrumbs?: Array<{ name: string; href?: string }>;
+  children: React.ReactNode;
+  searchBar?: React.ReactNode;
+  filterBar?: React.ReactNode;
+  actions?: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <DashboardLayout
+      title={title}
+      breadcrumbs={breadcrumbs}
+      actions={actions}
+      className={className}
+    >
+      {/* Search and filter bar */}
+      {(searchBar || filterBar) && (
+        <div className="mb-6 flex flex-col sm:flex-row gap-4 justify-between">
+          <div className="flex-1">
+            {searchBar}
+          </div>
+          {filterBar && (
+            <div className="flex-shrink-0">
+              {filterBar}
+            </div>
+          )}
+        </div>
+      )}
+      
+      {children}
+    </DashboardLayout>
+  );
+}
+
+export function DetailPageLayout({
+  title,
+  breadcrumbs,
+  children,
+  sidebar,
+  actions,
+  className
+}: {
+  title: string;
+  breadcrumbs?: Array<{ name: string; href?: string }>;
+  children: React.ReactNode;
+  sidebar?: React.ReactNode;
+  actions?: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <DashboardLayout
+      title={title}
+      breadcrumbs={breadcrumbs}
+      actions={actions}
+      className={className}
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Main content */}
+        <div className={cn(
+          sidebar ? 'lg:col-span-8' : 'lg:col-span-12'
+        )}>
+          {children}
+        </div>
+
+        {/* Sidebar content */}
+        {sidebar && (
+          <div className="lg:col-span-4">
+            {sidebar}
+          </div>
+        )}
+      </div>
+    </DashboardLayout>
+  );
+}
+
 export default React.memo(DashboardLayout);

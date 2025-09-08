@@ -205,8 +205,10 @@ export const AUTH_CONFIG = {
 } as const;
 
 // Type guards for safer type checking (prevents useEffect loops)
-export const isUser = (obj: any): obj is User => {
-  return obj && typeof obj.id === 'number' && typeof obj.email === 'string';
+export const isUser = (obj: unknown): obj is User => {
+  return Boolean(obj && typeof obj === 'object' && obj !== null && 
+         'id' in obj && typeof (obj as Record<string, unknown>).id === 'number' && 
+         'email' in obj && typeof (obj as Record<string, unknown>).email === 'string');
 };
 
 export const isAuthenticatedUser = (user: User | null): user is User => {

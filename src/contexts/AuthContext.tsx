@@ -125,7 +125,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         dispatch({ type: 'SET_INITIALIZED', payload: true });
         dispatch({ type: 'SET_LOADING', payload: false });
       }
-    } catch (error) {
+    } catch {
       dispatch({ type: 'CLEAR_AUTH' });
     }
   }, []);

@@ -6,6 +6,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import LoginForm from '@/components/forms/LoginForm';
 
 /**
@@ -25,23 +26,28 @@ const LoginPage: React.FC = () => {
       <div className="relative z-10 max-w-md w-full space-y-8 px-4 sm:px-6 lg:px-8">
         {/* Header Section with enhanced styling */}
         <div className="text-center space-y-6">
-          {/* Logo with gradient background */}
-          <div className="mx-auto h-16 w-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300">
-            <svg className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-4a2 2 0 00-2-2H6a2 2 0 00-2 2v4a2 2 0 002 2zM12 9a3 3 0 100-6 3 3 0 000 6z" />
-            </svg>
+          {/* Ipemelere Logo */}
+          <div className="mx-auto h-20 w-20 flex items-center justify-center transform hover:scale-110 transition-transform duration-300">
+            <Image 
+              src="/Ipemelere_Logo.png" 
+              alt="Ipemelere Logo" 
+              width={80}
+              height={80}
+              className="object-contain drop-shadow-lg"
+              priority
+            />
           </div>
           
           {/* Enhanced typography */}
           <div className="space-y-2">
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              Ganyu Ipemelere
+              Ipemelere
             </h1>
             <h2 className="text-2xl font-semibold text-foreground">
               Administrator Portal
             </h2>
             <p className="text-muted-foreground">
-              Sign in to access your admin dashboard
+              Manage your taxi & courier services
             </p>
           </div>
         </div>
@@ -57,7 +63,7 @@ const LoginPage: React.FC = () => {
         {/* Footer with branding */}
         <div className="text-center">
           <p className="text-sm text-muted-foreground">
-            Powered by Ganyu Technologies
+            © 2024 Ipemelere - Taxi, Car Hire & Courier Services
           </p>
         </div>
       </div>
