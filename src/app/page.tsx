@@ -125,9 +125,9 @@ export default function LandingPage() {
   ];
 
   const vehicleTypes = [
-    { type: 'Sedan', description: 'Comfortable rides for 1-4 passengers', price: 'MWK 150/km' },
-    { type: 'Hatchback', description: 'Efficient transport for city trips', price: 'MWK 120/km' },
-    { type: 'Premium', description: 'Luxury vehicles for special occasions', price: 'MWK 200/km' },
+    { type: 'Sedan', description: 'Comfortable rides for 1-4 passengers', price: 'MWK 3000/km' },
+    { type: 'Hatchback', description: 'Efficient transport for city trips', price: 'MWK 3000/km' },
+    { type: 'Premium', description: 'Luxury vehicles for special occasions', price: 'MWK 3000/km' },
   ];
 
   const testimonials = [
@@ -272,10 +272,10 @@ export default function LandingPage() {
                       
                       <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                         <div className="p-2 bg-green-50 rounded text-green-700 text-center font-medium">
-                          Sedan • MWK 150/km
+                          Sedan • MWK 3000/km
                         </div>
                         <div className="p-2 bg-yellow-50 rounded text-yellow-700 text-center font-medium">
-                          Premium • MWK 200/km
+                          Premium • MWK 3000/km
                         </div>
                       </div>
                     </div>
@@ -400,19 +400,9 @@ export default function LandingPage() {
                         </span>
                       </div>
                       
-                      <Button 
-                        className={`w-full py-3 px-6 rounded-xl font-semibold transform hover:scale-105 transition-all duration-200 ${
-                          index === 1 
-                            ? 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg shadow-orange-500/25' 
-                            : 'bg-gradient-to-r from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 hover:text-slate-900'
-                        }`}
-                        asChild
-                      >
-                        <Link href="/contact">
-                          Select {vehicle.type}
-                          <div className="ml-2">→</div>
-                        </Link>
-                      </Button>
+                      <div className="w-full py-3 px-6 rounded-xl font-semibold text-center bg-gradient-to-r from-slate-100 to-slate-200 text-slate-600 border-2 border-slate-200">
+                        Available on Booking
+                      </div>
                     </div>
                   </div>
                 </div>
