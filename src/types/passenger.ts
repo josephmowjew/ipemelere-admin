@@ -84,7 +84,7 @@ export interface PassengerActivity {
   timestamp: string;
   userId?: number;
   adminId?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, string | number | boolean>;
 }
 
 export interface PassengerRide {
@@ -227,7 +227,7 @@ export interface PassengerError {
   code: string;
   message: string;
   field?: keyof Passenger;
-  details?: Record<string, any>;
+  details?: Record<string, string | number | boolean>;
 }
 
 // API response types

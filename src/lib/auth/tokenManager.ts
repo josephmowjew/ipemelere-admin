@@ -5,6 +5,26 @@
 
 import { TokenData, AUTH_COOKIES, AUTH_CONFIG } from '@/types/auth';
 
+// JWT payload structure
+interface JWTPayload {
+  sub?: string;          // Subject (user ID)
+  email?: string;        // User email
+  role?: string;         // User role
+  iat?: number;          // Issued at
+  exp?: number;          // Expiry timestamp
+  [key: string]: string | number | boolean | undefined;    // Allow for additional custom claims
+}
+
+// User data structure for storage
+interface UserDataStorage {
+  id: number;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  role?: string;
+  [key: string]: string | number | boolean | undefined;    // Allow for additional fields
+}
+
 // Client-side cookie utilities (fallback for when httpOnly cookies aren't available)
 class ClientTokenManager {
   private static instance: ClientTokenManager;
@@ -193,7 +213,7 @@ class ClientTokenManager {
   /**
    * Store user data (for quick access without API calls)
    */
-  setUserData(userData: any): boolean {
+  setUserData(userData: UserDataStorage): boolean {
     try {
       this.setCookie(AUTH_COOKIES.USER_DATA, JSON.stringify(userData));
       return true;
@@ -207,7 +227,7 @@ class ClientTokenManager {
    * Get user data
    * Returns parsed user data or null (primitive)
    */
-  getUserData(): any | null {
+  getUserData(): UserDataStorage | null {
     try {
       const cookieValue = this.getCookie(AUTH_COOKIES.USER_DATA);
       if (!cookieValue) {
@@ -266,7 +286,7 @@ export const tokenUtils = {
    * Parse JWT token payload (client-side only)
    * Returns null if invalid (primitive for safe dependencies)
    */
-  parseTokenPayload: (token: string): any | null => {
+  parseTokenPayload: (token: string): JWTPayload | null => {
     try {
       if (typeof window === 'undefined') {
         return null; // Don't parse on server

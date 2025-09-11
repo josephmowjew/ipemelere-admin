@@ -24,6 +24,20 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { UserGrowthData } from '@/types/dashboard';
 
+// Types for Recharts tooltip
+interface TooltipPayload {
+  name: string;
+  value: number;
+  color: string;
+  dataKey: string;
+}
+
+interface UserGrowthTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayload[];
+  label?: string;
+}
+
 // Reuse loading and error components from RevenueChart
 const ChartSkeleton: React.FC<{ height?: number }> = ({ height = 300 }) => (
   <div className="w-full" style={{ height }}>
@@ -43,7 +57,7 @@ const ChartError: React.FC<{ error: string; height?: number }> = ({ error, heigh
 );
 
 // Custom tooltip for user growth data
-const UserGrowthTooltip: React.FC<any> = ({ active, payload, label }) => {
+const UserGrowthTooltip: React.FC<UserGrowthTooltipProps> = ({ active, payload, label }) => {
   if (!active || !payload || !payload.length) {
     return null;
   }
@@ -51,7 +65,7 @@ const UserGrowthTooltip: React.FC<any> = ({ active, payload, label }) => {
   return (
     <div className="bg-background border border-border rounded-lg shadow-lg p-3">
       <p className="font-medium text-foreground mb-2">{label}</p>
-      {payload.map((entry: any, index: number) => (
+      {payload.map((entry: TooltipPayload, index: number) => (
         <div key={index} className="flex items-center space-x-2">
           <div
             className="w-3 h-3 rounded"

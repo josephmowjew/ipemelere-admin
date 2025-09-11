@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,6 @@ import {
 import { cn } from '@/lib/utils';
 import { MALAWI_DISTRICTS } from '@/lib/api/types';
 import type { 
-  Passenger, 
   PassengerFormData, 
   PassengerFormProps 
 } from '@/types/passenger';
@@ -167,7 +166,6 @@ export const PassengerEditForm: React.FC<PassengerFormProps> = ({
     formState: { errors, isSubmitting, isDirty },
     setError,
     clearErrors,
-    reset,
     setValue,
     watch,
   } = useForm<PassengerFormData>({
@@ -230,8 +228,10 @@ export const PassengerEditForm: React.FC<PassengerFormProps> = ({
     
     try {
       await onSubmitRef.current(data);
-    } catch (error: any) {
-      const errorMessage = error.message || 'An unexpected error occurred while saving passenger data';
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'An unexpected error occurred while saving passenger data';
       
       // Set form-level error
       setError('root', { message: errorMessage });

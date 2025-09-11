@@ -126,8 +126,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       
       // Navigate to redirect target
       router.push(redirectTo);
-    } catch (error: any) {
-      const errorMessage = error.message || 'An unexpected error occurred';
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'An unexpected error occurred';
       
       // Set form-level error
       setError('root', { message: errorMessage });

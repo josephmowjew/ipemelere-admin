@@ -32,6 +32,7 @@ export interface FilterDropdownProps {
 }
 
 export function FilterDropdown({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   label: _label,
   options,
   selectedValues,
@@ -105,7 +106,7 @@ export function FilterDropdown({
       {/* Trigger Button */}
       <Button
         variant={variant}
-        size={size}
+        size={size === 'md' ? 'default' : size}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           'justify-between min-w-32',

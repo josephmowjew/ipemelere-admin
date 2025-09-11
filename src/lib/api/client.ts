@@ -21,7 +21,7 @@ class TokenRefreshManager {
   private refreshPromise: Promise<string | null> | null = null;
   private failedQueue: Array<{
     resolve: (token: string | null) => void;
-    reject: (error: any) => void;
+    reject: (error: unknown) => void;
   }> = [];
 
   private constructor() {}
@@ -70,7 +70,7 @@ class TokenRefreshManager {
   /**
    * Process queued requests after token refresh
    */
-  private processQueue(error: any, token: string | null): void {
+  private processQueue(error: unknown, token: string | null): void {
     this.failedQueue.forEach(({ resolve, reject }) => {
       if (error) {
         reject(error);
@@ -107,7 +107,8 @@ class TokenRefreshManager {
       // If expired, clear tokens and throw error
       tokenManager.clearAll();
       throw new Error('Token expired and refresh not implemented');
-    } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
       tokenManager.clearAll();
       return null;
     }
@@ -214,7 +215,8 @@ class ApiClient {
 
       // Retry original request
       return this.axiosInstance(config);
-    } catch (refreshError) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_refreshError) {
       tokenManager.clearAll();
       return Promise.reject(this.createAuthError(error));
     }
@@ -283,7 +285,7 @@ class ApiClient {
    */
   private createAuthError(error: AxiosError): AuthError {
     if (error.response?.data && typeof error.response.data === 'object') {
-      const data = error.response.data as any;
+      const data = error.response.data as { code?: string; message?: string; field?: string };
       return {
         code: data.code || error.response.status.toString(),
         message: data.message || error.message,

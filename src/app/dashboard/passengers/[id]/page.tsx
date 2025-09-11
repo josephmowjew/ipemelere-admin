@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { DetailPageLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,7 @@ import {
   PencilIcon
 } from '@heroicons/react/24/outline';
 import { usePassengerDetails, useUpdatePassengerStatus } from '@/hooks/api/usePassengerData';
-import type { Passenger, PassengerRide, PassengerActivity } from '@/types/passenger';
+import type { Passenger } from '@/types/passenger';
 import { cn } from '@/lib/utils';
 
 export default function PassengerDetailPage() {
@@ -38,8 +38,6 @@ export default function PassengerDetailPage() {
     isLoading,
     hasError,
     passengerError,
-    activityError,
-    ridesError,
     refetchAll
   } = usePassengerDetails(passengerId);
   
@@ -91,9 +89,9 @@ export default function PassengerDetailPage() {
   }
 
   const breadcrumbs = [
-    { name: 'Dashboard', href: '/dashboard' },
-    { name: 'Passengers', href: '/dashboard/passengers' },
-    { name: `${passenger.firstName} ${passenger.lastName}`, href: '', current: true }
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Passengers', href: '/dashboard/passengers' },
+    { label: `${passenger.firstName} ${passenger.lastName}`, href: '', current: true }
   ];
 
   const actions = (

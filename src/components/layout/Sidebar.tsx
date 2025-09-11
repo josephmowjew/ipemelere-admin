@@ -96,7 +96,7 @@ function NavigationItem({ item, isCollapsed }: { item: NavigationItem; isCollaps
     return (
       <CollapsedNavigationItem 
         item={item} 
-        isActive={isActive}
+        isActive={!!isActive}
         hasChildren={!!hasChildren}
       />
     );
@@ -106,7 +106,7 @@ function NavigationItem({ item, isCollapsed }: { item: NavigationItem; isCollaps
     <div>
       <NavigationLink
         item={item}
-        isActive={isActive}
+        isActive={!!isActive}
         hasChildren={!!hasChildren}
         isExpanded={isExpanded}
         onToggle={() => setIsExpanded(!isExpanded)}

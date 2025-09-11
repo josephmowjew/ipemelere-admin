@@ -15,13 +15,74 @@ import type {
   PassengerStats,
   PassengerExportParams,
   PassengerApiResponse,
-  PassengerListApiResponse,
   PaginationMeta
 } from '@/types/passenger';
 
+// API response interfaces (what the backend actually returns)
+interface PassengerAPIResponse {
+  id: number;
+  firstName?: string;
+  first_name?: string;
+  lastName?: string;
+  last_name?: string;
+  email: string;
+  phoneNumber?: string;
+  phone_number?: string;
+  status: string;
+  district?: string;
+  city?: string;
+  address?: string;
+  nationalId?: string;
+  national_id?: string;
+  emergencyContact?: {
+    name: string;
+    phone: string;
+    relationship: string;
+  };
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  emergency_contact_relationship?: string;
+  registrationStatus?: string;
+  registration_status?: string;
+  emailVerificationStatus?: string;
+  email_verification_status?: string;
+  phoneVerificationStatus?: string;
+  phone_verification_status?: string;
+  documentVerificationStatus?: string;
+  document_verification_status?: string;
+  createdAt?: string;
+  created_at?: string;
+  updatedAt?: string;
+  updated_at?: string;
+  lastActivity?: string;
+  last_activity?: string;
+  totalRides?: number;
+  total_rides?: number;
+  totalSpent?: number;
+  total_spent?: number;
+  averageRating?: number;
+  average_rating?: number;
+  [key: string]: string | number | boolean | object | null | undefined;
+}
+
+interface PassengerAPIUpdateData {
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  district?: string;
+  city?: string;
+  address?: string;
+  emergencyContact?: {
+    name: string;
+    phone: string;
+    relationship: string;
+  };
+  [key: string]: string | number | boolean | object | null | undefined; // For flexibility with backend expectations
+}
+
 // Data transformers (API response -> App format)
 class PassengerTransformer {
-  static fromAPI(apiData: any): Passenger {
+  static fromAPI(apiData: PassengerAPIResponse): Passenger {
     return {
       id: apiData.id,
       firstName: apiData.firstName || apiData.first_name || '',
@@ -29,7 +90,7 @@ class PassengerTransformer {
       email: apiData.email || '',
       phoneNumber: apiData.phoneNumber || apiData.phone_number || '',
       role: 'passenger',
-      status: apiData.status || 'pending',
+      status: (apiData.status as Passenger['status']) || 'pending',
       
       // Location information (with fallbacks for missing data)
       district: apiData.district || 'Not specified',
@@ -45,24 +106,24 @@ class PassengerTransformer {
       },
       
       // Registration and verification status
-      registrationStatus: apiData.registrationStatus || apiData.registration_status || 'pending',
-      emailVerificationStatus: apiData.emailVerificationStatus || apiData.email_verification_status || 'pending',
-      phoneVerificationStatus: apiData.phoneVerificationStatus || apiData.phone_verification_status || 'pending',
-      documentVerificationStatus: apiData.documentVerificationStatus || apiData.document_verification_status || 'pending',
+      registrationStatus: (apiData.registrationStatus || apiData.registration_status || 'pending') as Passenger['registrationStatus'],
+      emailVerificationStatus: (apiData.emailVerificationStatus || apiData.email_verification_status || 'pending') as Passenger['emailVerificationStatus'],
+      phoneVerificationStatus: (apiData.phoneVerificationStatus || apiData.phone_verification_status || 'pending') as Passenger['phoneVerificationStatus'],
+      documentVerificationStatus: (apiData.documentVerificationStatus || apiData.document_verification_status || 'pending') as Passenger['documentVerificationStatus'],
       
       // Timestamps
       createdAt: apiData.createdAt || apiData.created_at || new Date().toISOString(),
       updatedAt: apiData.updatedAt || apiData.updated_at || apiData.createdAt || apiData.created_at || new Date().toISOString(),
-      lastActivity: apiData.lastActivity || apiData.last_activity || apiData.updatedAt || apiData.updated_at,
+      lastActivity: apiData.lastActivity || apiData.last_activity || apiData.updatedAt || apiData.updated_at || undefined,
       
       // Aggregate data (with defaults)
-      totalRides: apiData.totalRides || apiData.total_rides || 0,
-      totalSpent: apiData.totalSpent || apiData.total_spent || 0,
-      averageRating: apiData.averageRating || apiData.average_rating || 0,
+      totalRides: Number(apiData.totalRides || apiData.total_rides || 0),
+      totalSpent: Number(apiData.totalSpent || apiData.total_spent || 0),
+      averageRating: Number(apiData.averageRating || apiData.average_rating || 0),
     };
   }
 
-  static toAPI(passenger: PassengerUpdateData): any {
+  static toAPI(passenger: PassengerUpdateData): PassengerAPIUpdateData {
     return {
       firstName: passenger.firstName,
       lastName: passenger.lastName,
@@ -76,7 +137,7 @@ class PassengerTransformer {
     };
   }
 
-  static transformList(apiData: any[]): Passenger[] {
+  static transformList(apiData: PassengerAPIResponse[]): Passenger[] {
     return apiData.map(this.fromAPI);
   }
 }
@@ -102,7 +163,7 @@ export class PassengerService {
       if (params.sortOrder) searchParams.set('sortOrder', params.sortOrder);
 
       const response = await api.get<{
-        passengers: any[];
+        passengers: PassengerAPIResponse[];
         total: number;
         limit: number;
         offset: number;
@@ -135,7 +196,7 @@ export class PassengerService {
    */
   static async getPassenger(id: number): Promise<Passenger> {
     try {
-      const response = await api.get<{ passenger: any }>(`/admin/passengers/${id}`);
+      const response = await api.get<{ passenger: PassengerAPIResponse }>(`/admin/passengers/${id}`);
       return PassengerTransformer.fromAPI(response.data.passenger);
     } catch (error) {
       console.error('Failed to fetch passenger:', error);
@@ -152,7 +213,7 @@ export class PassengerService {
         `/admin/passengers/${id}`, 
         PassengerTransformer.toAPI(data)
       );
-      return PassengerTransformer.fromAPI(response.data.data);
+      return PassengerTransformer.fromAPI(response.data.data as unknown as PassengerAPIResponse);
     } catch (error) {
       console.error('Failed to update passenger:', error);
       throw error;
@@ -168,7 +229,7 @@ export class PassengerService {
         `/admin/passengers/${id}/status`,
         data
       );
-      return PassengerTransformer.fromAPI(response.data.data);
+      return PassengerTransformer.fromAPI(response.data.data as unknown as PassengerAPIResponse);
     } catch (error) {
       console.error('Failed to update passenger status:', error);
       throw error;
@@ -245,7 +306,8 @@ export class PassengerService {
   }
 
   // Mock data methods (fallback when API is unavailable)
-  private static getMockPassengers(params: PassengerListParams): PassengerListResponse {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private static getMockPassengers(_params: PassengerListParams): PassengerListResponse {
     const mockData: Passenger[] = [
       {
         id: 1,

@@ -12,7 +12,7 @@ import { Sidebar } from './Sidebar';
 import { TopNavbar } from './TopNavbar';
 import { Breadcrumb } from './Breadcrumb';
 import { NAVIGATION_ITEMS } from '@/constants/navigation';
-import { type DashboardLayoutProps } from '@/types/layout';
+import { type DashboardLayoutProps, type BreadcrumbItem } from '@/types/layout';
 import { cn } from '@/lib/utils';
 
 export function DashboardLayout({ 
@@ -75,7 +75,7 @@ export function DashboardLayout({
           user={user ? {
             name: `${user.firstName} ${user.lastName}`,
             email: user.email,
-            avatar: user.profilePicture,
+            avatar: undefined,
             role: user.role
           } : undefined}
           notifications={mockNotifications}
@@ -112,7 +112,7 @@ function PageHeader({
   actions
 }: {
   title?: string;
-  breadcrumbs?: Array<{ name: string; href?: string }>;
+  breadcrumbs?: BreadcrumbItem[];
   actions?: React.ReactNode;
 }) {
   if (!title && breadcrumbs.length === 0 && !actions) {
@@ -160,7 +160,7 @@ export function ListPageLayout({
   className
 }: {
   title: string;
-  breadcrumbs?: Array<{ name: string; href?: string }>;
+  breadcrumbs?: BreadcrumbItem[];
   children: React.ReactNode;
   searchBar?: React.ReactNode;
   filterBar?: React.ReactNode;
@@ -202,7 +202,7 @@ export function DetailPageLayout({
   className
 }: {
   title: string;
-  breadcrumbs?: Array<{ name: string; href?: string }>;
+  breadcrumbs?: BreadcrumbItem[];
   children: React.ReactNode;
   sidebar?: React.ReactNode;
   actions?: React.ReactNode;

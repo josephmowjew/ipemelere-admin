@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ListPageLayout } from '@/components/layout/DashboardLayout';
 import { PassengerSearchBar } from '@/components/ui/SearchBar';
@@ -16,14 +16,12 @@ import {
   UsersIcon, 
   FunnelIcon, 
   ArrowDownTrayIcon,
-  EyeIcon,
   UserMinusIcon,
   ExclamationTriangleIcon 
 } from '@heroicons/react/24/outline';
 import { PassengerTable } from '@/components/tables/PassengerTable';
 import { usePassengers, usePassengerStats, useExportPassengers } from '@/hooks/api/usePassengerData';
 import { MALAWI_DISTRICTS } from '@/lib/api/types';
-import { cn } from '@/lib/utils';
 import type { Passenger, PassengerListParams } from '@/types/passenger';
 
 interface PassengerFilters {
@@ -54,7 +52,7 @@ export default function PassengersPage() {
   };
 
   // React Query hooks
-  const { data: passengerData, isLoading, error, refetch } = usePassengers(queryParams);
+  const { data: passengerData, isLoading, error } = usePassengers(queryParams);
   const { data: stats } = usePassengerStats();
   const exportMutation = useExportPassengers();
 
@@ -161,8 +159,8 @@ export default function PassengersPage() {
   );
 
   const breadcrumbs = [
-    { name: 'Dashboard', href: '/dashboard' },
-    { name: 'Passengers', href: '/dashboard/passengers', current: true }
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Passengers', href: '/dashboard/passengers', current: true }
   ];
 
   return (

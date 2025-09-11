@@ -22,6 +22,20 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { RevenueData } from '@/types/dashboard';
 
+// Types for Recharts tooltip
+interface TooltipPayload {
+  name: string;
+  value: number;
+  color: string;
+  dataKey: string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayload[];
+  label?: string;
+}
+
 // Chart loading skeleton
 const ChartSkeleton: React.FC<{ height?: number }> = ({ height = 300 }) => (
   <div className="w-full" style={{ height }}>
@@ -42,7 +56,7 @@ const ChartError: React.FC<{ error: string; height?: number }> = ({ error, heigh
 );
 
 // Custom tooltip component
-const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
+const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label }) => {
   if (!active || !payload || !payload.length) {
     return null;
   }
@@ -58,7 +72,7 @@ const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
   return (
     <div className="bg-background border border-border rounded-lg shadow-lg p-3">
       <p className="font-medium text-foreground mb-2">{label}</p>
-      {payload.map((entry: any, index: number) => (
+      {payload.map((entry: TooltipPayload, index: number) => (
         <div key={index} className="flex items-center space-x-2">
           <div
             className="w-3 h-3 rounded"

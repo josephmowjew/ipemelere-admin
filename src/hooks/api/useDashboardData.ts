@@ -176,7 +176,8 @@ export const useDashboardSummary = () => {
 };
 
 // Hook for real-time dashboard updates (with interval)
-export const useRealTimeDashboard = (interval: number = 30000) => { // 30 seconds default
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const useRealTimeDashboard = (_interval: number = 30000) => { // 30 seconds default
   const queries = useDashboardQueries();
   
   // Extract loading states

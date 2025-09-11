@@ -190,7 +190,6 @@ export default function DashboardPage() {
     hasError,
     metricsError,
     activityError,
-    statusError,
   } = useDashboardSummary();
 
   const { data: revenueData, isLoading: revenueLoading, error: revenueError } = useRevenueChart({ period: 'month' });

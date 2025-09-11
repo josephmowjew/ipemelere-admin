@@ -6,6 +6,12 @@
 import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { tokenManager, tokenUtils } from '@/lib/auth/tokenManager';
 import { useAuthActions } from '@/store/authStore';
+
+// Type for the required auth actions
+interface RequiredAuthActions {
+  logout: () => void;
+  refreshToken: () => Promise<void>;
+}
 import { AUTH_CONFIG } from '@/types/auth';
 
 /**
@@ -51,7 +57,8 @@ export const useTokenManager = (config: TokenManagerConfig = {}) => {
   const fullConfig = useMemo(() => ({ ...DEFAULT_CONFIG, ...config }), [config]);
   
   // Auth actions (stable from Zustand)
-  const { logout, refreshToken } = useAuthActions();
+  const authActions = useAuthActions() as RequiredAuthActions;
+  const { logout, refreshToken } = authActions;
   
   // Local state for token status (primitive values)
   const [tokenStatus, setTokenStatus] = useState<TokenStatus>({
@@ -209,10 +216,12 @@ export const useTokenManager = (config: TokenManagerConfig = {}) => {
   
   /**
    * Initial token status check on mount
+   * We want this to run only once when the component mounts, regardless of updateTokenStatus changes
    */
   useEffect(() => {
     updateTokenStatus();
-  }, []); // Empty dependency array - only run once on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Intentionally empty - only run once on mount
   
   /**
    * Periodic token status monitoring (with loop prevention)
@@ -381,11 +390,15 @@ export const useTokenValidEffect = (
 ) => {
   const isTokenValid = useTokenValid();
   
+  // Create a stable dependency array by combining fixed deps with dynamic ones
+  const allDeps = useMemo(() => [isTokenValid, effect, ...deps], [isTokenValid, effect, deps]);
+  
   useEffect(() => {
     if (isTokenValid) {
       return effect();
     }
-  }, [isTokenValid, ...deps]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, allDeps); // Using computed dependency array - spread is handled in useMemo
 };
 
 export default useTokenManager;

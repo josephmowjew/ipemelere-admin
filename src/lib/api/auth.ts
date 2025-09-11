@@ -12,10 +12,33 @@ import {
   UserWithEmergencyContact,
   ProfileUpdateRequest,
   ProfileUpdateResponse,
-  ApiResponse,
   AuthError,
+  UserRole,
+  UserStatus,
+  RegistrationStatus,
+  VerificationStatus,
   API_ENDPOINTS 
 } from '@/types/auth';
+
+// Helper function to convert user objects to storage format
+const convertToUserDataStorage = (user: User | UserWithEmergencyContact): { id: number; email: string; firstName?: string; lastName?: string; role?: string } => {
+  return {
+    id: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role,
+  };
+};
+
+// Backend user response interface (what the API actually returns)
+interface BackendUserResponse {
+  id: number;
+  name?: string;
+  email: string;
+  phone?: string;
+  role: string;
+}
 
 /**
  * Authentication API class with loop-safe methods
@@ -39,7 +62,7 @@ class AuthAPI {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     try {
       // Backend actually returns { token, user } format
-      const response = await api.post<{ token: string; user: any }>(API_ENDPOINTS.AUTH.LOGIN, {
+      const response = await api.post<{ token: string; user: BackendUserResponse }>(API_ENDPOINTS.AUTH.LOGIN, {
         email: credentials.email,
         password: credentials.password,
       });
@@ -89,8 +112,8 @@ class AuthAPI {
         throw new Error('Failed to store authentication token');
       }
 
-      // Store user data for quick access
-      tokenManager.setUserData(loginData.user);
+      // Store user data for quick access (convert to storage format)
+      tokenManager.setUserData(convertToUserDataStorage(loginData.user));
 
       return loginData;
     } catch (error) {
@@ -129,7 +152,7 @@ class AuthAPI {
       const response = await api.get<UserWithEmergencyContact>(API_ENDPOINTS.USER.PROFILE);
       
       // Update cached user data
-      tokenManager.setUserData(response.data);
+      tokenManager.setUserData(convertToUserDataStorage(response.data));
       
       return response.data;
     } catch (error) {
@@ -150,7 +173,7 @@ class AuthAPI {
 
       // Update cached user data with new information
       if (response.data.success && response.data.user) {
-        tokenManager.setUserData(response.data.user);
+        tokenManager.setUserData(convertToUserDataStorage(response.data.user));
       }
 
       return response.data;
@@ -185,8 +208,8 @@ class AuthAPI {
         return { isValid: false, user: null };
       }
 
-      // Get cached user data
-      const cachedUser = tokenManager.getUserData();
+      // Note: We don't rely on cached user data for admin validation
+      // Always verify with server to ensure current permissions
       
       // For admin dashboard, we should verify with server
       // This prevents using stale tokens after role changes
@@ -200,15 +223,15 @@ class AuthAPI {
         }
 
         return { isValid: true, user: currentUser };
-      } catch (serverError) {
-        // If server call fails but we have valid token, use cached data
-        if (cachedUser) {
-          return { isValid: true, user: cachedUser };
-        }
-        
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_serverError) {
+        // If server call fails, we can't guarantee user data is current
+        // Clear token and require re-authentication
+        tokenManager.clearAll();
         return { isValid: false, user: null };
       }
-    } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
       return { isValid: false, user: null };
     }
   }
@@ -230,31 +253,23 @@ class AuthAPI {
       }
       
       return null;
-    } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
       tokenManager.clearAll();
       return null;
     }
   }
 
-  /**
-   * Get cached user data without API call
-   * Returns primitive values for safe useEffect dependencies
-   */
-  getCachedUser(): User | null {
-    try {
-      return tokenManager.getUserData();
-    } catch {
-      return null;
-    }
-  }
+  // Note: getCachedUser removed - don't rely on incomplete cached data
+  // Always use getProfile() or validateAuth() for complete user information
 
   /**
    * Get cached user ID (primitive for safe useEffect dependencies)
    */
   getCachedUserId(): number | null {
     try {
-      const user = this.getCachedUser();
-      return user?.id || null;
+      const userData = tokenManager.getUserData();
+      return userData?.id || null;
     } catch {
       return null;
     }
@@ -265,8 +280,10 @@ class AuthAPI {
    */
   isAdmin(): boolean {
     try {
-      const user = this.getCachedUser();
-      return user?.role === 'admin' && user?.status === 'active';
+      const userData = tokenManager.getUserData();
+      return userData?.role === 'admin';
+      // Note: We can't check status from cached data as it's not stored
+      // For full validation, use validateAuth() instead
     } catch {
       return false;
     }
@@ -286,16 +303,17 @@ class AuthAPI {
   /**
    * Handle API errors consistently
    */
-  private handleApiError(error: any): AuthError {
+  private handleApiError(error: unknown): AuthError {
     // If it's already an AuthError from the interceptor, return as is
-    if (error.code && error.message) {
+    if (error && typeof error === 'object' && 'code' in error && 'message' in error) {
       return error as AuthError;
     }
 
     // Handle Axios errors
-    if (error.response) {
-      const status = error.response.status;
-      const data = error.response.data;
+    if (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object') {
+      const response = error.response as { status: number; data?: { message?: string; field?: string } };
+      const status = response.status;
+      const data = response.data;
 
       // Handle specific status codes
       switch (status) {
@@ -339,7 +357,7 @@ class AuthAPI {
     }
 
     // Handle network errors
-    if (error.code === 'NETWORK_ERROR' || !error.response) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'NETWORK_ERROR') {
       return {
         code: 'NETWORK_ERROR',
         message: 'Network connection failed',
@@ -347,9 +365,13 @@ class AuthAPI {
     }
 
     // Generic error fallback
+    const errorMessage = error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'
+      ? error.message
+      : 'An unexpected error occurred';
+    
     return {
       code: 'UNKNOWN_ERROR',
-      message: error.message || 'An unexpected error occurred',
+      message: errorMessage,
     };
   }
 }

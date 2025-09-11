@@ -3,7 +3,7 @@
  * Following established patterns and design document principles
  */
 
-import { apiClient } from './client';
+import { api } from './client';
 import { ApiResponse, PaginationParams, PaginationResponse, DocumentStatus, VerificationStatus, RideRecord, ActivityRecord, DriverAnalytics } from './types';
 
 // Types for Driver Management
@@ -128,7 +128,7 @@ export const driverAPI = {
     if (params.vehicleType) searchParams.set('vehicleType', params.vehicleType);
     if (params.verificationStatus) searchParams.set('verificationStatus', params.verificationStatus);
 
-    const response = await apiClient.get<PaginationResponse<Driver>>(
+    const response = await api.get<PaginationResponse<Driver>>(
       `/admin/drivers?${searchParams.toString()}`
     );
     return response.data;
@@ -138,7 +138,7 @@ export const driverAPI = {
    * Get individual driver by ID with full details
    */
   async getDriver(id: number): Promise<Driver> {
-    const response = await apiClient.get<ApiResponse<Driver>>(`/admin/drivers/${id}`);
+    const response = await api.get<ApiResponse<Driver>>(`/admin/drivers/${id}`);
     return response.data.data;
   },
 
@@ -146,7 +146,7 @@ export const driverAPI = {
    * Update driver information (admin)
    */
   async updateDriver(id: number, data: DriverUpdateData): Promise<Driver> {
-    const response = await apiClient.put<ApiResponse<Driver>>(
+    const response = await api.put<ApiResponse<Driver>>(
       `/admin/drivers/${id}`, 
       data
     );
@@ -157,7 +157,7 @@ export const driverAPI = {
    * Change driver account status
    */
   async updateDriverStatus(id: number, data: DriverStatusChangeData): Promise<Driver> {
-    const response = await apiClient.put<ApiResponse<Driver>>(
+    const response = await api.put<ApiResponse<Driver>>(
       `/admin/drivers/${id}/status`,
       data
     );
@@ -168,7 +168,7 @@ export const driverAPI = {
    * Review driver document (approve/reject)
    */
   async reviewDocument(driverId: number, documentId: number, data: DocumentReviewData): Promise<DriverDocument> {
-    const response = await apiClient.put<ApiResponse<DriverDocument>>(
+    const response = await api.put<ApiResponse<DriverDocument>>(
       `/admin/drivers/${driverId}/documents/${documentId}/review`,
       data
     );
@@ -179,7 +179,7 @@ export const driverAPI = {
    * Get driver documents
    */
   async getDriverDocuments(id: number): Promise<DriverDocument[]> {
-    const response = await apiClient.get<ApiResponse<DriverDocument[]>>(`/admin/drivers/${id}/documents`);
+    const response = await api.get<ApiResponse<DriverDocument[]>>(`/admin/drivers/${id}/documents`);
     return response.data.data;
   },
 
@@ -187,7 +187,7 @@ export const driverAPI = {
    * Get driver activity history
    */
   async getDriverActivity(id: number): Promise<ActivityRecord[]> {
-    const response = await apiClient.get<ApiResponse<ActivityRecord[]>>(`/admin/drivers/${id}/activity`);
+    const response = await api.get<ApiResponse<ActivityRecord[]>>(`/admin/drivers/${id}/activity`);
     return response.data.data;
   },
 
@@ -199,7 +199,7 @@ export const driverAPI = {
     if (params.page) searchParams.set('page', params.page.toString());
     if (params.limit) searchParams.set('limit', params.limit.toString());
 
-    const response = await apiClient.get<PaginationResponse<RideRecord>>(
+    const response = await api.get<PaginationResponse<RideRecord>>(
       `/admin/drivers/${id}/rides?${searchParams.toString()}`
     );
     return response.data;
@@ -209,7 +209,7 @@ export const driverAPI = {
    * Get driver performance analytics
    */
   async getDriverAnalytics(id: number): Promise<DriverAnalytics> {
-    const response = await apiClient.get<ApiResponse<DriverAnalytics>>(`/admin/drivers/${id}/analytics`);
+    const response = await api.get<ApiResponse<DriverAnalytics>>(`/admin/drivers/${id}/analytics`);
     return response.data.data;
   },
 
@@ -221,7 +221,7 @@ export const driverAPI = {
     if (params.page) searchParams.set('page', params.page.toString());
     if (params.limit) searchParams.set('limit', params.limit.toString());
 
-    const response = await apiClient.get<PaginationResponse<{driver: Driver, document: DriverDocument}>>(
+    const response = await api.get<PaginationResponse<{driver: Driver, document: DriverDocument}>>(
       `/admin/drivers/documents/pending?${searchParams.toString()}`
     );
     return response.data;
@@ -239,7 +239,7 @@ export const driverAPI = {
     if (params.vehicleType) searchParams.set('vehicleType', params.vehicleType);
     if (params.verificationStatus) searchParams.set('verificationStatus', params.verificationStatus);
 
-    const response = await apiClient.get(
+    const response = await api.get(
       `/admin/drivers/export?${searchParams.toString()}`,
       { responseType: 'blob' }
     );

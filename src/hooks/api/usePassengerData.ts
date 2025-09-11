@@ -132,7 +132,8 @@ export const useCreatePassenger = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: PassengerFormData): Promise<Passenger> => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    mutationFn: async (_data: PassengerFormData): Promise<Passenger> => {
       // Since we don't have a create endpoint in the API service,
       // this would need to be added to the passengerApi
       throw new Error('Create passenger endpoint not implemented');
@@ -219,13 +220,16 @@ export const useBulkPassengerAction = () => {
 
   return useMutation({
     mutationFn: async ({ 
-      ids, 
-      action, 
-      data 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      ids: _ids, 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      action: _action, 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      data: _data 
     }: { 
       ids: number[]; 
       action: 'status_change' | 'export' | 'delete';
-      data?: any;
+      data?: unknown;
     }): Promise<void> => {
       // This would be implemented when bulk operations are added to the API
       throw new Error('Bulk passenger operations not implemented');
@@ -256,7 +260,8 @@ export const useExportPassengers = () => {
     mutationFn: (params: PassengerExportParams = {}): Promise<Blob> => {
       return passengerApi.exportPassengers(params);
     },
-    onSuccess: (blob, params) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onSuccess: (blob, _params) => {
       // Create download link
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -427,7 +432,7 @@ export const usePassengerFilters = () => {
 export const usePassengerFilterState = (initialFilters: PassengerListParams = {}) => {
   const [filters, setFilters] = useState<PassengerListParams>(initialFilters);
   
-  const updateFilter = useCallback((key: keyof PassengerListParams, value: any) => {
+  const updateFilter = useCallback((key: keyof PassengerListParams, value: PassengerListParams[keyof PassengerListParams]) => {
     setFilters(prev => ({ ...prev, [key]: value, page: 1 })); // Reset to page 1 on filter change
   }, []);
 

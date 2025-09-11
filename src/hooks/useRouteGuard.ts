@@ -5,7 +5,7 @@
 
 import React, { useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useAuthSelectors } from '@/store/authStore';
+import { useIsAuthenticated, useIsLoading, useIsInitialized, useUserRole, useUserStatus, useIsAdmin } from '@/store/authStore';
 import { RouteGuardOptions, UserRole } from '@/types/auth';
 
 /**
@@ -40,11 +40,11 @@ export const useRouteGuard = (options: Partial<RouteGuardOptions> = {}): RouteGu
   const pathname = usePathname();
   
   // Get primitive auth state values (safe for useEffect)
-  const isAuthenticated = useAuthSelectors.isAuthenticated();
-  const isLoading = useAuthSelectors.isLoading();
-  const isInitialized = useAuthSelectors.isInitialized();
-  const userRole = useAuthSelectors.userRole();
-  const userStatus = useAuthSelectors.userStatus();
+  const isAuthenticated = useIsAuthenticated();
+  const isLoading = useIsLoading();
+  const isInitialized = useIsInitialized();
+  const userRole = useUserRole();
+  const userStatus = useUserStatus();
   
   // Stable references to prevent redirect loops
   const hasRedirectedRef = useRef<boolean>(false);
@@ -235,9 +235,9 @@ export const useAuthRedirect = (
   const router = useRouter();
   const pathname = usePathname();
   
-  const isAuthenticated = useAuthSelectors.isAuthenticated();
-  const isInitialized = useAuthSelectors.isInitialized();
-  const isAdmin = useAuthSelectors.isAdmin();
+  const isAuthenticated = useIsAuthenticated();
+  const isInitialized = useIsInitialized();
+  const isAdmin = useIsAdmin();
   
   // Stable references
   const hasRedirectedRef = useRef<boolean>(false);
@@ -289,8 +289,8 @@ export const useAuthRedirect = (
  * Returns primitive boolean for safe use in components
  */
 export const useRouteLoading = (): boolean => {
-  const isLoading = useAuthSelectors.isLoading();
-  const isInitialized = useAuthSelectors.isInitialized();
+  const isLoading = useIsLoading();
+  const isInitialized = useIsInitialized();
   
   return isLoading || !isInitialized;
 };
@@ -300,10 +300,10 @@ export const useRouteLoading = (): boolean => {
  * Returns primitive values only
  */
 export const useRouteAccess = (requiredRole?: UserRole) => {
-  const isAuthenticated = useAuthSelectors.isAuthenticated();
-  const userRole = useAuthSelectors.userRole();
-  const userStatus = useAuthSelectors.userStatus();
-  const isInitialized = useAuthSelectors.isInitialized();
+  const isAuthenticated = useIsAuthenticated();
+  const userRole = useUserRole();
+  const userStatus = useUserStatus();
+  const isInitialized = useIsInitialized();
   
   return useMemo(() => ({
     canAccess: isAuthenticated && 

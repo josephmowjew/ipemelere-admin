@@ -29,7 +29,7 @@ export function SearchBar({
   variant = 'default'
 }: SearchBarProps) {
   const [query, setQuery] = useState(initialValue);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Debounced search effect
   useEffect(() => {

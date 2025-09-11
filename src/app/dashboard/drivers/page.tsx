@@ -200,7 +200,6 @@ export default function DriversPage() {
         selectedValues={filters.verificationStatus}
         onSelectionChange={handleVerificationChange}
         statuses={['verified', 'pending', 'rejected']}
-        label="Verification"
       />
       
       <Button variant="outline" size="sm" onClick={handleExport}>
@@ -228,8 +227,8 @@ export default function DriversPage() {
   );
 
   const breadcrumbs = [
-    { name: 'Dashboard', href: '/dashboard' },
-    { name: 'Drivers', href: '/dashboard/drivers', current: true }
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Drivers', href: '/dashboard/drivers', current: true }
   ];
 
   // Calculate summary stats

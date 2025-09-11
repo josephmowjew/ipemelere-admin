@@ -30,8 +30,10 @@ interface PassengerRowProps {
 const PassengerRow: React.FC<PassengerRowProps> = ({ 
   passenger, 
   onView, 
-  onEdit, 
-  onStatusChange 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onEdit: _onEdit, 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onStatusChange: _onStatusChange 
 }) => {
   const getVerificationIcon = (status: string) => {
     switch (status) {

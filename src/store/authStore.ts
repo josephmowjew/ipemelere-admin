@@ -6,12 +6,11 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 import { authAPI, authUtils } from '@/lib/api/auth';
-import { tokenManager } from '@/lib/auth/tokenManager';
 import { 
   AuthState, 
-  AuthActions, 
+ 
   AuthStore, 
   LoginRequest, 
   ProfileUpdateRequest, 
@@ -121,7 +120,8 @@ const useAuthStore = create<AuthStore>()(
               isInitialized: true, // Keep initialized as true after logout
               lastCheck: Date.now(),
             });
-          } catch (error) {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          } catch (_error) {
             // Even if API logout fails, clear local state
             set({
               ...initialAuthState,
@@ -270,7 +270,8 @@ const useAuthStore = create<AuthStore>()(
                 lastCheck: Date.now(),
               });
             }
-          } catch (error) {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          } catch (_error) {
             // Clear auth state on error
             set({
               ...initialAuthState,
@@ -328,36 +329,34 @@ export const authSelectors = {
 };
 
 /**
- * Hook selectors for components (memoized to prevent unnecessary re-renders)
+ * Custom hook selectors for components (following React Rules of Hooks)
  */
-export const useAuthSelectors = {
-  // Authentication status hooks (return primitives)
-  isAuthenticated: () => useAuthStore(authSelectors.isAuthenticated),
-  isLoading: () => useAuthStore(authSelectors.isLoading),
-  isInitialized: () => useAuthStore(authSelectors.isInitialized),
-  
-  // User identification hooks (primitives)
-  userId: () => useAuthStore(authSelectors.userId),
-  userRole: () => useAuthStore(authSelectors.userRole),
-  userStatus: () => useAuthStore(authSelectors.userStatus),
-  
-  // Error hook
-  error: () => useAuthStore(authSelectors.error),
-  
-  // Computed status hooks (primitives)
-  isAdmin: () => useAuthStore(authSelectors.isAdmin),
-  isActiveUser: () => useAuthStore(authSelectors.isActiveUser),
-  hasError: () => useAuthStore(authSelectors.hasError),
-  
-  // Full user object hook (use with caution in useEffect)
-  user: () => useAuthStore(authSelectors.user),
-};
+// Authentication status hooks (return primitives)
+export const useIsAuthenticated = () => useAuthStore(authSelectors.isAuthenticated);
+export const useIsLoading = () => useAuthStore(authSelectors.isLoading);
+export const useIsInitialized = () => useAuthStore(authSelectors.isInitialized);
+
+// User identification hooks (primitives)
+export const useUserId = () => useAuthStore(authSelectors.userId);
+export const useUserRole = () => useAuthStore(authSelectors.userRole);
+export const useUserStatus = () => useAuthStore(authSelectors.userStatus);
+
+// Error hook
+export const useAuthError = () => useAuthStore(authSelectors.error);
+
+// Computed status hooks (primitives)
+export const useIsAdmin = () => useAuthStore(authSelectors.isAdmin);
+export const useIsActiveUser = () => useAuthStore(authSelectors.isActiveUser);
+export const useHasAuthError = () => useAuthStore(authSelectors.hasError);
+
+// Full user object hook (use with caution in useEffect)
+export const useAuthUser = () => useAuthStore(authSelectors.user);
 
 /**
  * Action hooks for components with stable reference using shallow equality
  */
 export const useAuthActions = () => useAuthStore(
-  (state) => ({
+  useShallow((state) => ({
     login: state.login,
     logout: state.logout,
     updateProfile: state.updateProfile,
@@ -367,8 +366,7 @@ export const useAuthActions = () => useAuthStore(
     setInitialized: state.setInitialized,
     refreshToken: state.refreshToken,
     checkAuthStatus: state.checkAuthStatus,
-  }),
-  shallow
+  }))
 );
 
 /**
@@ -389,7 +387,8 @@ export const initializeAuth = async (): Promise<void> => {
       // No valid token, mark as initialized but not authenticated
       store.setInitialized(true);
     }
-  } catch (error) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (_error) {
     // Clear auth state and mark as initialized
     store.logout();
     store.setInitialized(true);
@@ -399,7 +398,17 @@ export const initializeAuth = async (): Promise<void> => {
 /**
  * Cached snapshot to prevent infinite loops
  */
-let cachedSnapshot: any = null;
+let cachedSnapshot: { 
+  isAuthenticated: boolean; 
+  userId: number | null; 
+  error: string | null; 
+  isLoading: boolean; 
+  isInitialized: boolean;
+  userRole: string | null;
+  userStatus: string | null;
+  lastCheck: number | null;
+  isAdmin: boolean;
+} | null = null;
 let lastSnapshotTime = 0;
 
 /**
