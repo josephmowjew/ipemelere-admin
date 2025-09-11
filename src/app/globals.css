@@ -157,4 +157,108 @@
   .animation-delay-4000 {
     animation-delay: 4s;
   }
+  
+  /* Custom animations for the landing page */
+  @keyframes gradient-x {
+    0%, 100% {
+      transform: translateX(0%);
+    }
+    50% {
+      transform: translateX(100%);
+    }
+  }
+  
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+  
+  @keyframes glow {
+    0%, 100% {
+      opacity: 1;
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    }
+    50% {
+      opacity: 0.8;
+      box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+    }
+  }
+  
+  .animate-gradient-x {
+    animation: gradient-x 15s ease infinite;
+  }
+  
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+  
+  /* Grid background pattern */
+  .bg-grid-white\/10 {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(255 255 255 / 0.1)'%3e%3cpath d='m0 .5h32m-32 32v-32'/%3e%3c/svg%3e");
+  }
+  
+  /* Glass morphism effect */
+  .backdrop-blur-glass {
+    backdrop-filter: blur(16px) saturate(180%);
+    background-color: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Custom button animations without transform scaling */
+  .btn-primary-glow {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .btn-primary-glow:hover {
+    box-shadow: 
+      0 25px 50px -12px rgba(254, 240, 138, 0.5),
+      0 0 0 1px rgba(254, 240, 138, 0.1),
+      0 0 30px rgba(163, 230, 53, 0.3);
+    filter: brightness(1.1) saturate(1.2);
+  }
+  
+  .btn-secondary-glow {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .btn-secondary-glow:hover {
+    box-shadow: 
+      0 25px 50px -12px rgba(255, 255, 255, 0.25),
+      0 0 0 1px rgba(255, 255, 255, 0.2),
+      0 0 20px rgba(255, 255, 255, 0.15);
+    filter: brightness(1.2);
+  }
+  
+  /* Rolling wheel logo animation */
+  @keyframes rollToRight {
+    0% {
+      transform: translateX(-150px) rotate(0deg);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(calc(100vw - 350px)) rotate(1440deg);
+      opacity: 1;
+    }
+  }
+  
+  .rolling-logo {
+    animation: rollToRight 8s ease-in-out 1s both;
+    z-index: 10;
+  }
+  
+  /* Pause animation on hover to let users see the logo clearly */
+  .rolling-logo:hover {
+    animation-play-state: paused;
+  }
 }

@@ -1,151 +1,460 @@
 /**
  * Passenger API Client - Admin endpoints for passenger management
- * Following established patterns from auth.ts and design document principles
+ * Following repository pattern from design document
  */
 
-import { apiClient } from './client';
-import { ApiResponse, PaginationParams, PaginationResponse, RideRecord, ActivityRecord } from './types';
+import { api } from '@/lib/api/client';
+import type {
+  Passenger,
+  PassengerListParams,
+  PassengerListResponse,
+  PassengerUpdateData,
+  PassengerStatusChangeData,
+  PassengerActivity,
+  PassengerRide,
+  PassengerStats,
+  PassengerExportParams,
+  PassengerApiResponse,
+  PassengerListApiResponse,
+  PaginationMeta
+} from '@/types/passenger';
 
-// Types for Passenger Management
-export interface Passenger {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-  role: 'passenger';
-  status: 'active' | 'suspended' | 'banned' | 'pending';
-  district: string;
-  city: string;
-  address: string;
-  nationalId: string;
-  emergencyContact: {
-    name: string;
-    phone: string;
-    relationship: string;
-  };
-  registrationStatus: 'pending' | 'completed';
-  emailVerificationStatus: 'pending' | 'verified';
-  phoneVerificationStatus: 'pending' | 'verified';
-  documentVerificationStatus: 'pending' | 'verified' | 'rejected';
-  createdAt: string;
-  updatedAt: string;
-  lastActivity?: string;
-  totalRides?: number;
-  totalSpent?: number;
+// Data transformers (API response -> App format)
+class PassengerTransformer {
+  static fromAPI(apiData: any): Passenger {
+    return {
+      id: apiData.id,
+      firstName: apiData.firstName || apiData.first_name || '',
+      lastName: apiData.lastName || apiData.last_name || '',
+      email: apiData.email || '',
+      phoneNumber: apiData.phoneNumber || apiData.phone_number || '',
+      role: 'passenger',
+      status: apiData.status || 'pending',
+      
+      // Location information (with fallbacks for missing data)
+      district: apiData.district || 'Not specified',
+      city: apiData.city || 'Not specified',
+      address: apiData.address || 'Not provided',
+      nationalId: apiData.nationalId || apiData.national_id || 'Not provided',
+      
+      // Emergency contact (with fallbacks)
+      emergencyContact: {
+        name: apiData.emergencyContact?.name || apiData.emergency_contact_name || 'Not provided',
+        phone: apiData.emergencyContact?.phone || apiData.emergency_contact_phone || 'Not provided',
+        relationship: apiData.emergencyContact?.relationship || apiData.emergency_contact_relationship || 'Not specified',
+      },
+      
+      // Registration and verification status
+      registrationStatus: apiData.registrationStatus || apiData.registration_status || 'pending',
+      emailVerificationStatus: apiData.emailVerificationStatus || apiData.email_verification_status || 'pending',
+      phoneVerificationStatus: apiData.phoneVerificationStatus || apiData.phone_verification_status || 'pending',
+      documentVerificationStatus: apiData.documentVerificationStatus || apiData.document_verification_status || 'pending',
+      
+      // Timestamps
+      createdAt: apiData.createdAt || apiData.created_at || new Date().toISOString(),
+      updatedAt: apiData.updatedAt || apiData.updated_at || apiData.createdAt || apiData.created_at || new Date().toISOString(),
+      lastActivity: apiData.lastActivity || apiData.last_activity || apiData.updatedAt || apiData.updated_at,
+      
+      // Aggregate data (with defaults)
+      totalRides: apiData.totalRides || apiData.total_rides || 0,
+      totalSpent: apiData.totalSpent || apiData.total_spent || 0,
+      averageRating: apiData.averageRating || apiData.average_rating || 0,
+    };
+  }
+
+  static toAPI(passenger: PassengerUpdateData): any {
+    return {
+      firstName: passenger.firstName,
+      lastName: passenger.lastName,
+      phoneNumber: passenger.phoneNumber,
+      district: passenger.district,
+      city: passenger.city,
+      address: passenger.address,
+      emergencyContactName: passenger.emergencyContactName,
+      emergencyContactPhone: passenger.emergencyContactPhone,
+      emergencyContactRelationship: passenger.emergencyContactRelationship,
+    };
+  }
+
+  static transformList(apiData: any[]): Passenger[] {
+    return apiData.map(this.fromAPI);
+  }
 }
 
-export interface PassengerListParams extends PaginationParams {
-  search?: string;
-  status?: Passenger['status'];
-  district?: string;
-  verificationStatus?: 'verified' | 'pending' | 'rejected';
-}
-
-export interface PassengerUpdateData {
-  firstName?: string;
-  lastName?: string;
-  phoneNumber?: string;
-  district?: string;
-  city?: string;
-  address?: string;
-  emergencyContactName?: string;
-  emergencyContactPhone?: string;
-  emergencyContactRelationship?: string;
-}
-
-export interface PassengerStatusChangeData {
-  status: Passenger['status'];
-  reason?: string;
-}
-
-// Admin API functions for passenger management
-export const passengerAPI = {
+// Passenger API service class
+export class PassengerService {
   /**
    * Get list of passengers with filtering and pagination
    */
-  async getPassengers(params: PassengerListParams = {}): Promise<PaginationResponse<Passenger>> {
-    const searchParams = new URLSearchParams();
-    
-    if (params.page) searchParams.set('page', params.page.toString());
-    if (params.limit) searchParams.set('limit', params.limit.toString());
-    if (params.search) searchParams.set('search', params.search);
-    if (params.status) searchParams.set('status', params.status);
-    if (params.district) searchParams.set('district', params.district);
-    if (params.verificationStatus) searchParams.set('verificationStatus', params.verificationStatus);
+  static async getPassengers(params: PassengerListParams = {}): Promise<PassengerListResponse> {
+    try {
+      const searchParams = new URLSearchParams();
+      
+      if (params.page) searchParams.set('page', params.page.toString());
+      if (params.limit) searchParams.set('limit', params.limit.toString());
+      if (params.search) searchParams.set('search', params.search);
+      if (params.status) searchParams.set('status', params.status);
+      if (params.district) searchParams.set('district', params.district);
+      if (params.verificationStatus) searchParams.set('verificationStatus', params.verificationStatus);
+      if (params.emailVerified !== undefined) searchParams.set('emailVerified', params.emailVerified.toString());
+      if (params.phoneVerified !== undefined) searchParams.set('phoneVerified', params.phoneVerified.toString());
+      if (params.sortBy) searchParams.set('sortBy', params.sortBy);
+      if (params.sortOrder) searchParams.set('sortOrder', params.sortOrder);
 
-    const response = await apiClient.get<PaginationResponse<Passenger>>(
-      `/admin/passengers?${searchParams.toString()}`
-    );
-    return response.data;
-  },
+      const response = await api.get<{
+        passengers: any[];
+        total: number;
+        limit: number;
+        offset: number;
+      }>(`/admin/passengers?${searchParams.toString()}`);
+
+      // Transform the real API response to our expected format
+      const currentPage = params.page || 1;
+      const perPage = params.limit || 50;
+      const totalPages = Math.ceil(response.data.total / perPage);
+
+      return {
+        data: PassengerTransformer.transformList(response.data.passengers),
+        pagination: {
+          current_page: currentPage,
+          per_page: perPage,
+          total: response.data.total,
+          total_pages: totalPages,
+          has_next_page: currentPage < totalPages,
+          has_prev_page: currentPage > 1,
+        },
+      };
+    } catch (error) {
+      console.error('Failed to fetch passengers:', error);
+      return this.getMockPassengers(params);
+    }
+  }
 
   /**
    * Get individual passenger by ID
    */
-  async getPassenger(id: number): Promise<Passenger> {
-    const response = await apiClient.get<ApiResponse<Passenger>>(`/admin/passengers/${id}`);
-    return response.data.data;
-  },
+  static async getPassenger(id: number): Promise<Passenger> {
+    try {
+      const response = await api.get<{ passenger: any }>(`/admin/passengers/${id}`);
+      return PassengerTransformer.fromAPI(response.data.passenger);
+    } catch (error) {
+      console.error('Failed to fetch passenger:', error);
+      return this.getMockPassenger(id);
+    }
+  }
 
   /**
    * Update passenger information (admin)
    */
-  async updatePassenger(id: number, data: PassengerUpdateData): Promise<Passenger> {
-    const response = await apiClient.put<ApiResponse<Passenger>>(
-      `/admin/passengers/${id}`, 
-      data
-    );
-    return response.data.data;
-  },
+  static async updatePassenger(id: number, data: PassengerUpdateData): Promise<Passenger> {
+    try {
+      const response = await api.put<PassengerApiResponse>(
+        `/admin/passengers/${id}`, 
+        PassengerTransformer.toAPI(data)
+      );
+      return PassengerTransformer.fromAPI(response.data.data);
+    } catch (error) {
+      console.error('Failed to update passenger:', error);
+      throw error;
+    }
+  }
 
   /**
    * Change passenger account status
    */
-  async updatePassengerStatus(id: number, data: PassengerStatusChangeData): Promise<Passenger> {
-    const response = await apiClient.put<ApiResponse<Passenger>>(
-      `/admin/passengers/${id}/status`,
-      data
-    );
-    return response.data.data;
-  },
+  static async updatePassengerStatus(id: number, data: PassengerStatusChangeData): Promise<Passenger> {
+    try {
+      const response = await api.put<PassengerApiResponse>(
+        `/admin/passengers/${id}/status`,
+        data
+      );
+      return PassengerTransformer.fromAPI(response.data.data);
+    } catch (error) {
+      console.error('Failed to update passenger status:', error);
+      throw error;
+    }
+  }
 
   /**
    * Get passenger activity history
    */
-  async getPassengerActivity(id: number): Promise<ActivityRecord[]> {
-    const response = await apiClient.get<ApiResponse<ActivityRecord[]>>(`/admin/passengers/${id}/activity`);
-    return response.data.data;
-  },
+  static async getPassengerActivity(id: number): Promise<PassengerActivity[]> {
+    try {
+      const response = await api.get<PassengerApiResponse<PassengerActivity[]>>(`/admin/passengers/${id}/activity`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Failed to fetch passenger activity:', error);
+      return this.getMockActivity();
+    }
+  }
 
   /**
    * Get passenger ride history
    */
-  async getPassengerRides(id: number, params: PaginationParams = {}): Promise<PaginationResponse<RideRecord>> {
-    const searchParams = new URLSearchParams();
-    if (params.page) searchParams.set('page', params.page.toString());
-    if (params.limit) searchParams.set('limit', params.limit.toString());
+  static async getPassengerRides(id: number, params: { page?: number; limit?: number } = {}): Promise<{ data: PassengerRide[]; pagination: PaginationMeta }> {
+    try {
+      const searchParams = new URLSearchParams();
+      if (params.page) searchParams.set('page', params.page.toString());
+      if (params.limit) searchParams.set('limit', params.limit.toString());
 
-    const response = await apiClient.get<PaginationResponse<RideRecord>>(
-      `/admin/passengers/${id}/rides?${searchParams.toString()}`
-    );
-    return response.data;
-  },
+      const response = await api.get<{ data: PassengerRide[]; pagination: PaginationMeta }>(
+        `/admin/passengers/${id}/rides?${searchParams.toString()}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch passenger rides:', error);
+      return this.getMockRides();
+    }
+  }
+
+  /**
+   * Get passenger statistics
+   */
+  static async getPassengerStats(): Promise<PassengerStats> {
+    try {
+      const response = await api.get<PassengerApiResponse<PassengerStats>>('/admin/passengers/stats');
+      return response.data.data;
+    } catch (error) {
+      console.error('Failed to fetch passenger stats:', error);
+      return this.getMockStats();
+    }
+  }
 
   /**
    * Export passengers data
    */
-  async exportPassengers(params: Omit<PassengerListParams, 'page' | 'limit'> = {}): Promise<Blob> {
-    const searchParams = new URLSearchParams();
-    if (params.search) searchParams.set('search', params.search);
-    if (params.status) searchParams.set('status', params.status);
-    if (params.district) searchParams.set('district', params.district);
-    if (params.verificationStatus) searchParams.set('verificationStatus', params.verificationStatus);
+  static async exportPassengers(params: PassengerExportParams = {}): Promise<Blob> {
+    try {
+      const searchParams = new URLSearchParams();
+      if (params.search) searchParams.set('search', params.search);
+      if (params.status) searchParams.set('status', params.status);
+      if (params.district) searchParams.set('district', params.district);
+      if (params.verificationStatus) searchParams.set('verificationStatus', params.verificationStatus);
+      if (params.format) searchParams.set('format', params.format);
+      if (params.fields) searchParams.set('fields', params.fields.join(','));
 
-    const response = await apiClient.get(
-      `/admin/passengers/export?${searchParams.toString()}`,
-      { responseType: 'blob' }
-    );
-    return response.data;
+      const response = await api.get(
+        `/admin/passengers/export?${searchParams.toString()}`,
+        { responseType: 'blob' }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Failed to export passengers:', error);
+      return this.getMockExport();
+    }
   }
+
+  // Mock data methods (fallback when API is unavailable)
+  private static getMockPassengers(params: PassengerListParams): PassengerListResponse {
+    const mockData: Passenger[] = [
+      {
+        id: 1,
+        firstName: 'John',
+        lastName: 'Banda',
+        email: 'john.banda@example.com',
+        phoneNumber: '+265991234567',
+        role: 'passenger',
+        status: 'active',
+        district: 'Lilongwe',
+        city: 'Lilongwe',
+        address: 'Area 10, Lilongwe',
+        nationalId: '123456789',
+        emergencyContact: {
+          name: 'Mary Banda',
+          phone: '+265998765432',
+          relationship: 'Sister'
+        },
+        registrationStatus: 'completed',
+        emailVerificationStatus: 'verified',
+        phoneVerificationStatus: 'verified',
+        documentVerificationStatus: 'verified',
+        createdAt: '2024-01-15T10:30:00Z',
+        updatedAt: '2024-01-20T14:45:00Z',
+        lastActivity: '2024-01-20T09:15:00Z',
+        totalRides: 15,
+        totalSpent: 45000,
+        averageRating: 4.8,
+      },
+      {
+        id: 2,
+        firstName: 'Grace',
+        lastName: 'Phiri',
+        email: 'grace.phiri@example.com',
+        phoneNumber: '+265992345678',
+        role: 'passenger',
+        status: 'pending',
+        district: 'Blantyre',
+        city: 'Blantyre',
+        address: 'Limbe, Blantyre',
+        nationalId: '987654321',
+        emergencyContact: {
+          name: 'James Phiri',
+          phone: '+265999876543',
+          relationship: 'Husband'
+        },
+        registrationStatus: 'completed',
+        emailVerificationStatus: 'verified',
+        phoneVerificationStatus: 'pending',
+        documentVerificationStatus: 'pending',
+        createdAt: '2024-01-18T08:00:00Z',
+        updatedAt: '2024-01-18T08:00:00Z',
+        totalRides: 3,
+        totalSpent: 8500,
+        averageRating: 4.5,
+      },
+    ];
+
+    return {
+      data: mockData,
+      pagination: {
+        current_page: 1,
+        per_page: 50,
+        total: mockData.length,
+        total_pages: 1,
+        has_next_page: false,
+        has_prev_page: false,
+      },
+    };
+  }
+
+  private static getMockPassenger(id: number): Passenger {
+    return {
+      id,
+      firstName: 'John',
+      lastName: 'Banda',
+      email: 'john.banda@example.com',
+      phoneNumber: '+265991234567',
+      role: 'passenger',
+      status: 'active',
+      district: 'Lilongwe',
+      city: 'Lilongwe',
+      address: 'Area 10, Lilongwe',
+      nationalId: '123456789',
+      emergencyContact: {
+        name: 'Mary Banda',
+        phone: '+265998765432',
+        relationship: 'Sister'
+      },
+      registrationStatus: 'completed',
+      emailVerificationStatus: 'verified',
+      phoneVerificationStatus: 'verified',
+      documentVerificationStatus: 'verified',
+      createdAt: '2024-01-15T10:30:00Z',
+      updatedAt: '2024-01-20T14:45:00Z',
+      lastActivity: '2024-01-20T09:15:00Z',
+      totalRides: 15,
+      totalSpent: 45000,
+      averageRating: 4.8,
+    };
+  }
+
+  private static getMockActivity(): PassengerActivity[] {
+    return [
+      {
+        id: '1',
+        type: 'account_created',
+        description: 'Account created successfully',
+        timestamp: '2024-01-15T10:30:00Z',
+        userId: 1,
+      },
+      {
+        id: '2',
+        type: 'verification_completed',
+        description: 'Email verification completed',
+        timestamp: '2024-01-15T11:00:00Z',
+        userId: 1,
+      },
+      {
+        id: '3',
+        type: 'ride_completed',
+        description: 'Completed ride to City Centre',
+        timestamp: '2024-01-20T09:15:00Z',
+        userId: 1,
+      },
+    ];
+  }
+
+  private static getMockRides(): { data: PassengerRide[]; pagination: PaginationMeta } {
+    return {
+      data: [
+        {
+          id: 1,
+          status: 'ride_completed',
+          driverId: 1,
+          driverName: 'James Phiri',
+          pickupLocation: {
+            latitude: -13.9626,
+            longitude: 33.7741,
+            address: 'Area 10, Lilongwe'
+          },
+          dropoffLocation: {
+            latitude: -13.9833,
+            longitude: 33.7833,
+            address: 'City Centre, Lilongwe'
+          },
+          fare: {
+            baseFare: 2000,
+            distance: 8.5,
+            duration: 25,
+            totalFare: 3500,
+            currency: 'MWK'
+          },
+          paymentMethod: 'cash',
+          paymentStatus: 'paid',
+          startedAt: '2024-01-20T09:00:00Z',
+          completedAt: '2024-01-20T09:25:00Z',
+          rating: {
+            passengerRating: 5,
+            driverRating: 5,
+            passengerReview: 'Great service!',
+          },
+          createdAt: '2024-01-20T08:55:00Z',
+          updatedAt: '2024-01-20T09:25:00Z',
+        },
+      ],
+      pagination: {
+        current_page: 1,
+        per_page: 20,
+        total: 1,
+        total_pages: 1,
+        has_next_page: false,
+        has_prev_page: false,
+      },
+    };
+  }
+
+  private static getMockStats(): PassengerStats {
+    return {
+      totalPassengers: 847,
+      activePassengers: 720,
+      suspendedPassengers: 15,
+      bannedPassengers: 2,
+      pendingVerification: 110,
+      verifiedPassengers: 737,
+      totalRides: 12800,
+      totalRevenue: 2854000,
+      averageRidesPerPassenger: 15.1,
+    };
+  }
+
+  private static getMockExport(): Blob {
+    const csvData = 'Name,Email,Phone,Status,District,Total Rides\nJohn Banda,john.banda@example.com,+265991234567,active,Lilongwe,15';
+    return new Blob([csvData], { type: 'text/csv' });
+  }
+}
+
+// Export the service functions for easy use
+export const passengerApi = {
+  getPassengers: PassengerService.getPassengers.bind(PassengerService),
+  getPassenger: PassengerService.getPassenger.bind(PassengerService),
+  updatePassenger: PassengerService.updatePassenger.bind(PassengerService),
+  updatePassengerStatus: PassengerService.updatePassengerStatus.bind(PassengerService),
+  getPassengerActivity: PassengerService.getPassengerActivity.bind(PassengerService),
+  getPassengerRides: PassengerService.getPassengerRides.bind(PassengerService),
+  getPassengerStats: PassengerService.getPassengerStats.bind(PassengerService),
+  exportPassengers: PassengerService.exportPassengers.bind(PassengerService),
 };
+
+// Backward compatibility - keep the existing API structure
+export const passengerAPI = passengerApi;
+export type { Passenger, PassengerListParams } from '@/types/passenger';

@@ -21,8 +21,8 @@ import {
   ExclamationTriangleIcon,
   PencilIcon
 } from '@heroicons/react/24/outline';
-import { passengerAPI, type Passenger } from '@/lib/api/passengers';
-import { type RideRecord, type ActivityRecord } from '@/lib/api/types';
+import { usePassengerDetails, useUpdatePassengerStatus } from '@/hooks/api/usePassengerData';
+import type { Passenger, PassengerRide, PassengerActivity } from '@/types/passenger';
 import { cn } from '@/lib/utils';
 
 export default function PassengerDetailPage() {
@@ -30,56 +30,36 @@ export default function PassengerDetailPage() {
   const router = useRouter();
   const passengerId = parseInt(params.id as string);
   
-  const [passenger, setPassenger] = useState<Passenger | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [rides, setRides] = useState<RideRecord[]>([]);
-  const [activity, setActivity] = useState<ActivityRecord[]>([]);
+  // React Query hooks
+  const {
+    passenger,
+    activity,
+    rides,
+    isLoading,
+    hasError,
+    passengerError,
+    activityError,
+    ridesError,
+    refetchAll
+  } = usePassengerDetails(passengerId);
+  
+  const updateStatusMutation = useUpdatePassengerStatus();
 
-  // Fetch passenger data
-  useEffect(() => {
-    if (!passengerId) return;
-
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [passengerData, ridesData, activityData] = await Promise.all([
-          passengerAPI.getPassenger(passengerId),
-          passengerAPI.getPassengerRides(passengerId, { limit: 10 }),
-          passengerAPI.getPassengerActivity(passengerId)
-        ]);
-
-        setPassenger(passengerData);
-        setRides(ridesData.data);
-        setActivity(activityData);
-      } catch (error) {
-        console.error('Failed to fetch passenger data:', error);
-        // In a real app, show error notification and possibly redirect
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [passengerId]);
-
-  // Status change handler
-  const handleStatusChange = async (newStatus: Passenger['status'], reason?: string) => {
+  // Status change handler using mutation
+  const handleStatusChange = (newStatus: Passenger['status'], reason?: string) => {
     if (!passenger) return;
 
-    try {
-      const updatedPassenger = await passengerAPI.updatePassengerStatus(passenger.id, {
+    updateStatusMutation.mutate({
+      id: passenger.id,
+      data: {
         status: newStatus,
-        reason
-      });
-      setPassenger(updatedPassenger);
-      // In a real app, show success notification
-    } catch (error) {
-      console.error('Failed to update passenger status:', error);
-      // In a real app, show error notification
-    }
+        reason,
+        adminNotes: reason
+      }
+    });
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -87,14 +67,25 @@ export default function PassengerDetailPage() {
     );
   }
 
-  if (!passenger) {
+  if (hasError || !passenger) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <h1 className="text-2xl font-bold text-foreground mb-2">Passenger Not Found</h1>
-        <p className="text-muted-foreground mb-4">The requested passenger could not be found.</p>
-        <Button onClick={() => router.push('/dashboard/passengers')}>
-          Back to Passengers
-        </Button>
+        <h1 className="text-2xl font-bold text-foreground mb-2">
+          {hasError ? 'Error Loading Passenger' : 'Passenger Not Found'}
+        </h1>
+        <p className="text-muted-foreground mb-4">
+          {passengerError || 'The requested passenger could not be found.'}
+        </p>
+        <div className="flex gap-2">
+          <Button onClick={() => router.push('/dashboard/passengers')}>
+            Back to Passengers
+          </Button>
+          {hasError && (
+            <Button variant="outline" onClick={refetchAll}>
+              Retry
+            </Button>
+          )}
+        </div>
       </div>
     );
   }
@@ -117,9 +108,10 @@ export default function PassengerDetailPage() {
           size="sm"
           onClick={() => handleStatusChange('suspended', 'Administrative action')}
           className="text-yellow-600 hover:text-yellow-700"
+          disabled={updateStatusMutation.isPending}
         >
           <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
-          Suspend
+          {updateStatusMutation.isPending ? 'Suspending...' : 'Suspend'}
         </Button>
       ) : (
         <Button 
@@ -127,9 +119,10 @@ export default function PassengerDetailPage() {
           size="sm"
           onClick={() => handleStatusChange('active')}
           className="text-green-600 hover:text-green-700"
+          disabled={updateStatusMutation.isPending}
         >
           <CheckCircleIcon className="h-4 w-4 mr-2" />
-          Activate
+          {updateStatusMutation.isPending ? 'Activating...' : 'Activate'}
         </Button>
       )}
     </div>
@@ -261,18 +254,27 @@ export default function PassengerDetailPage() {
                 <MapPinIcon className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Location</p>
-                  <p className="font-medium">{passenger.city}, {passenger.district}</p>
+                  <p className="font-medium">
+                    {passenger.city !== 'Not specified' && passenger.district !== 'Not specified' 
+                      ? `${passenger.city}, ${passenger.district}`
+                      : 'Location not provided'
+                    }
+                  </p>
                 </div>
               </div>
               
               <div>
                 <p className="text-sm text-muted-foreground">Address</p>
-                <p className="font-medium">{passenger.address}</p>
+                <p className="font-medium">
+                  {passenger.address !== 'Not provided' ? passenger.address : 'Address not provided'}
+                </p>
               </div>
               
               <div>
                 <p className="text-sm text-muted-foreground">National ID</p>
-                <p className="font-medium">{passenger.nationalId}</p>
+                <p className="font-medium">
+                  {passenger.nationalId !== 'Not provided' ? passenger.nationalId : 'National ID not provided'}
+                </p>
               </div>
             </div>
           </div>
@@ -284,15 +286,30 @@ export default function PassengerDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Name</p>
-              <p className="font-medium">{passenger.emergencyContact.name}</p>
+              <p className="font-medium">
+                {passenger.emergencyContact.name !== 'Not provided' 
+                  ? passenger.emergencyContact.name 
+                  : 'Not provided'
+                }
+              </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Phone</p>
-              <p className="font-medium">{passenger.emergencyContact.phone}</p>
+              <p className="font-medium">
+                {passenger.emergencyContact.phone !== 'Not provided' 
+                  ? passenger.emergencyContact.phone 
+                  : 'Not provided'
+                }
+              </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Relationship</p>
-              <p className="font-medium capitalize">{passenger.emergencyContact.relationship}</p>
+              <p className="font-medium capitalize">
+                {passenger.emergencyContact.relationship !== 'Not specified' 
+                  ? passenger.emergencyContact.relationship 
+                  : 'Not specified'
+                }
+              </p>
             </div>
           </div>
         </Card>
@@ -304,22 +321,33 @@ export default function PassengerDetailPage() {
             <Button variant="outline" size="sm">View All</Button>
           </div>
           
-          {rides.length === 0 ? (
+          {!rides?.data || rides.data.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">No rides found</p>
           ) : (
             <div className="space-y-4">
-              {rides.slice(0, 5).map((ride, index) => (
-                <div key={index} className="flex items-center justify-between p-4 border border-border rounded-lg">
+              {rides.data.slice(0, 5).map((ride) => (
+                <div key={ride.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
                   <div>
-                    <p className="font-medium">Ride #{index + 1}</p>
+                    <p className="font-medium">Ride #{ride.id}</p>
                     <p className="text-sm text-muted-foreground">
-                      Date placeholder - {new Date().toLocaleDateString()}
+                      {ride.pickupLocation.address} → {ride.dropoffLocation.address}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(ride.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">MWK 3,500</p>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      Completed
+                    <p className="font-medium">
+                      {ride.fare.currency} {ride.fare.totalFare.toLocaleString()}
+                    </p>
+                    <span className={cn(
+                      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
+                      ride.status === 'ride_completed' && 'bg-green-100 text-green-800',
+                      ride.status === 'ride_cancelled' && 'bg-red-100 text-red-800',
+                      ride.status === 'pending' && 'bg-gray-100 text-gray-800',
+                      (ride.status === 'driver_assigned' || ride.status === 'driver_en_route' || ride.status === 'driver_arrived' || ride.status === 'ride_started') && 'bg-blue-100 text-blue-800'
+                    )}>
+                      {ride.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                     </span>
                   </div>
                 </div>
@@ -331,16 +359,19 @@ export default function PassengerDetailPage() {
         {/* Recent Activity */}
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-          {activity.length === 0 ? (
+          {!activity || activity.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">No recent activity</p>
           ) : (
             <div className="space-y-4">
-              {activity.slice(0, 10).map((item, index) => (
-                <div key={index} className="flex items-start gap-3 p-3 border-l-4 border-blue-200 bg-blue-50/50">
+              {activity.slice(0, 10).map((item) => (
+                <div key={item.id} className="flex items-start gap-3 p-3 border-l-4 border-blue-200 bg-blue-50/50">
                   <div className="flex-1">
-                    <p className="text-sm">Activity item {index + 1}</p>
+                    <p className="text-sm font-medium">{item.description}</p>
+                    <p className="text-xs text-muted-foreground capitalize">
+                      {item.type.replace('_', ' ')}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date().toLocaleString()}
+                      {new Date(item.timestamp).toLocaleString()}
                     </p>
                   </div>
                 </div>
