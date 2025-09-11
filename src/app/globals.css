@@ -247,14 +247,35 @@
       opacity: 1;
     }
     100% {
-      transform: translateX(calc(100vw - 350px)) rotate(1440deg);
+      transform: translateX(var(--logo-end-position, 300px)) rotate(1440deg);
       opacity: 1;
     }
   }
   
   .rolling-logo {
+    --logo-end-position: calc(min(50vw, 600px) - 150px);
     animation: rollToRight 8s ease-in-out 1s both;
     z-index: 10;
+  }
+  
+  /* Responsive logo end positions */
+  @media (max-width: 640px) {
+    .rolling-logo {
+      --logo-end-position: 280px;
+      margin-top: -20px;
+    }
+  }
+  
+  @media (min-width: 641px) and (max-width: 1024px) {
+    .rolling-logo {
+      --logo-end-position: calc(60vw - 150px);
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .rolling-logo {
+      --logo-end-position: 350px;
+    }
   }
   
   /* Pause animation on hover to let users see the logo clearly */
