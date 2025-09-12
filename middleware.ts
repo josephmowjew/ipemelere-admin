@@ -127,19 +127,24 @@ export function middleware(request: NextRequest) {
       }
     }
     
-    // Special case: root path redirect
-    if (pathname === '/') {
-      const token = getTokenFromRequest(request);
-      const url = request.nextUrl.clone();
+    // Special case: root path redirect 
+    // if (pathname === '/') {
+    //   const token = getTokenFromRequest(request);
+    //   const url = request.nextUrl.clone();
       
-      if (token && hasAdminRole(token)) {
-        url.pathname = '/dashboard';
-        return NextResponse.redirect(url);
-      } else {
-        url.pathname = '/login';
-        return NextResponse.redirect(url);
-      }
+    //   if (token && hasAdminRole(token)) {
+    //     url.pathname = '/dashboard';
+    //     return NextResponse.redirect(url);
+    //   } else {
+    //     url.pathname = '/login';
+    //     return NextResponse.redirect(url);
+    //   }
+    // }
+
+    if (pathname === '/') {
+      return NextResponse.next();
     }
+
     
     return NextResponse.next();
   }
