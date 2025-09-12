@@ -359,11 +359,11 @@ export default function LandingPage() {
                 🚗 Vehicle Options
               </div>
               <h2 className="text-4xl sm:text-5xl font-black text-slate-900 mb-6">
-                Choose Your 
-                <span className="bg-gradient-to-r from-green-600 to-yellow-600 bg-clip-text text-transparent"> Perfect Ride</span>
+                Our 
+                <span className="bg-gradient-to-r from-green-600 to-yellow-600 bg-clip-text text-transparent"> Vehicle Fleet</span>
               </h2>
               <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
-                From budget-friendly options to premium comfort, we have the right vehicle for every journey
+                Quality vehicles maintained to the highest standards - we'll match you with the best available option for your journey
               </p>
             </div>
             
