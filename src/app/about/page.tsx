@@ -51,7 +51,7 @@ export default function AboutPage() {
     },
     {
       year: '2024',
-      title: 'Fleet of 12 Vehicles',
+      title: 'Fleet of 20+ Vehicles',
       description: 'Launched with verified drivers and well-maintained vehicles',
     },
     {
@@ -123,6 +123,9 @@ export default function AboutPage() {
                 <span className="font-semibold text-yellow-300"> safe technology</span>, 
                 <span className="font-semibold text-lime-300"> reliable service</span>, and 
                 <span className="font-semibold text-green-300"> community focus</span>.
+                <span className="block mt-4 text-lg italic font-medium text-yellow-200">
+                  Ndife Aganyu Anu
+                </span>
               </p>
               
               {/* Visual Stats */}
@@ -256,7 +259,7 @@ export default function AboutPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-card border border-border rounded-lg p-6 text-center">
                     <TruckIcon className="w-8 h-8 text-primary mx-auto mb-3" />
-                    <div className="text-2xl font-bold text-foreground">12+</div>
+                    <div className="text-2xl font-bold text-foreground">20+</div>
                     <div className="text-sm text-muted-foreground">Vehicles</div>
                   </div>
                   <div className="bg-card border border-border rounded-lg p-6 text-center">
@@ -443,6 +446,19 @@ export default function AboutPage() {
                 <span className="font-semibold text-yellow-300"> excellence</span> and 
                 <span className="font-semibold text-lime-300"> integrity</span>.
               </p>
+            </div>
+            
+            <div className="mb-8 text-center">
+              <p className="text-lg text-white/90 mb-4">Need immediate assistance? Call us:</p>
+              <div className="flex flex-wrap justify-center gap-4 text-yellow-300">
+                <a href="tel:+2658888119333" className="hover:text-yellow-200 transition-colors">+265 888 81 93 33</a>
+                <span className="text-white/50">•</span>
+                <a href="tel:+265999355461" className="hover:text-yellow-200 transition-colors">+265 999 35 54 61</a>
+                <span className="text-white/50">•</span>
+                <a href="tel:+27739476681" className="hover:text-yellow-200 transition-colors">+27 739 476 681</a>
+                <span className="text-white/50">•</span>
+                <a href="tel:+93700017627" className="hover:text-yellow-200 transition-colors">+93 700 017 627</a>
+              </div>
             </div>
             
             <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">

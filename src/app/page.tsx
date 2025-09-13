@@ -125,9 +125,9 @@ export default function LandingPage() {
   ];
 
   const vehicleTypes = [
-    { type: 'Sedan', description: 'Comfortable rides for 1-4 passengers', price: 'MWK 3000/km' },
-    { type: 'Hatchback', description: 'Efficient transport for city trips', price: 'MWK 3000/km' },
-    { type: 'Premium', description: 'Luxury vehicles for special occasions', price: 'MWK 3000/km' },
+    { type: 'Sedan', description: 'Comfortable rides for 1-4 passengers', price: 'MWK 2500 ($1.4) per km' },
+    { type: 'Hatchback', description: 'Efficient transport for city trips', price: 'MWK 2500 ($1.4) per km' },
+    { type: 'Premium', description: 'Luxury vehicles for special occasions', price: 'MWK 2500 ($1.4) per km' },
   ];
 
   const testimonials = [
@@ -206,6 +206,9 @@ export default function LandingPage() {
                   Safe, reliable transport across Malawi. Get where you need to go with 
                   <span className="font-semibold text-yellow-300"> verified drivers</span> and 
                   <span className="font-semibold text-lime-300"> transparent pricing</span>.
+                  <span className="block mt-4 text-lg italic font-medium text-yellow-200">
+                    Ndife Aganyu Anu
+                  </span>
                 </p>
                 
                 <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -272,10 +275,10 @@ export default function LandingPage() {
                       
                       <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                         <div className="p-2 bg-green-50 rounded text-green-700 text-center font-medium">
-                          Sedan • MWK 3000/km
+                          Sedan • MWK 2500 ($1.4)/km
                         </div>
                         <div className="p-2 bg-yellow-50 rounded text-yellow-700 text-center font-medium">
-                          Premium • MWK 3000/km
+                          Premium • MWK 2500 ($1.4)/km
                         </div>
                       </div>
                     </div>
@@ -320,7 +323,7 @@ export default function LandingPage() {
               </div>
               <h2 className="text-4xl sm:text-5xl font-black text-slate-900 mb-6">
                 Why Choose 
-                <span className="bg-gradient-to-r from-green-600 to-yellow-600 bg-clip-text text-transparent"> Ipemelere</span>?
+                <span className="bg-gradient-to-r from-green-600 to-yellow-600 bg-clip-text text-transparent"> G. Ipemelere</span>?
               </h2>
               <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
                 Experience transportation reimagined with cutting-edge technology and unmatched service quality
@@ -532,9 +535,20 @@ export default function LandingPage() {
             
             <div className="mt-12 text-center">
               <p className="text-lg mb-6">Need a ride right now?</p>
-              <Button size="lg" variant="secondary" className="text-lg px-8 py-3" asChild>
-                <Link href="/contact">Call Us: +265 888 81 93 33</Link>
-              </Button>
+              <div className="space-y-3">
+                <Button size="lg" variant="secondary" className="text-lg px-8 py-3 block w-full max-w-md mx-auto" asChild>
+                  <Link href="tel:+2658888119333">+265 888 81 93 33</Link>
+                </Button>
+                <Button size="lg" variant="secondary" className="text-lg px-8 py-3 block w-full max-w-md mx-auto" asChild>
+                  <Link href="tel:+265999355461">+265 999 35 54 61</Link>
+                </Button>
+                <Button size="lg" variant="secondary" className="text-lg px-8 py-3 block w-full max-w-md mx-auto" asChild>
+                  <Link href="tel:+27739476681">+27 739 476 681</Link>
+                </Button>
+                <Button size="lg" variant="secondary" className="text-lg px-8 py-3 block w-full max-w-md mx-auto" asChild>
+                  <Link href="tel:+93700017627">+93 700 017 627</Link>
+                </Button>
+              </div>
             </div>
           </div>
         </section>

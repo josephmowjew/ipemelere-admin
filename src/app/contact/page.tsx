@@ -104,7 +104,7 @@ export default function ContactPage() {
     {
       icon: PhoneIcon,
       title: 'Phone',
-      details: ['+265 888 81 93 33', 'Available 24/7'],
+      details: ['+265 888 81 93 33', '+265 999 35 54 61', '+27 739 476 681', '+93 700 017 627', 'Available 24/7'],
       action: 'tel:+2658888119333',
     },
     {
@@ -428,19 +428,42 @@ export default function ContactPage() {
               </p>
             </div>
             
-            <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">
-              <Button size="lg" className="text-lg px-8 py-4 bg-gradient-to-r from-yellow-500 to-lime-500 hover:from-yellow-600 hover:to-lime-600 text-black border-none shadow-2xl shadow-yellow-500/25 transform hover:scale-105 transition-all duration-200 font-bold" asChild>
-                <a href="tel:+2658888119333">
-                  <PhoneIcon className="w-5 h-5 mr-2" />
-                  Call Now: +265 888 81 93 33
-                </a>
-              </Button>
-              <Button size="lg" className="text-lg px-8 py-4 border-white/30 text-white hover:bg-white hover:text-slate-900 backdrop-blur-sm transform hover:scale-105 transition-all duration-200 bg-white/10" asChild>
-                <a href="mailto:support@ipemelere.com">
-                  <EnvelopeIcon className="w-5 h-5 mr-2" />
-                  Email Support
-                </a>
-              </Button>
+            <div className="space-y-4">
+              <p className="text-lg text-white/90 mb-4">Call any of our numbers:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Button size="lg" className="text-lg px-6 py-4 bg-gradient-to-r from-yellow-500 to-lime-500 hover:from-yellow-600 hover:to-lime-600 text-black border-none shadow-2xl shadow-yellow-500/25 transform hover:scale-105 transition-all duration-200 font-bold" asChild>
+                  <a href="tel:+2658888119333">
+                    <PhoneIcon className="w-5 h-5 mr-2" />
+                    +265 888 81 93 33
+                  </a>
+                </Button>
+                <Button size="lg" className="text-lg px-6 py-4 bg-gradient-to-r from-yellow-500 to-lime-500 hover:from-yellow-600 hover:to-lime-600 text-black border-none shadow-2xl shadow-yellow-500/25 transform hover:scale-105 transition-all duration-200 font-bold" asChild>
+                  <a href="tel:+265999355461">
+                    <PhoneIcon className="w-5 h-5 mr-2" />
+                    +265 999 35 54 61
+                  </a>
+                </Button>
+                <Button size="lg" className="text-lg px-6 py-4 bg-gradient-to-r from-yellow-500 to-lime-500 hover:from-yellow-600 hover:to-lime-600 text-black border-none shadow-2xl shadow-yellow-500/25 transform hover:scale-105 transition-all duration-200 font-bold" asChild>
+                  <a href="tel:+27739476681">
+                    <PhoneIcon className="w-5 h-5 mr-2" />
+                    +27 739 476 681
+                  </a>
+                </Button>
+                <Button size="lg" className="text-lg px-6 py-4 bg-gradient-to-r from-yellow-500 to-lime-500 hover:from-yellow-600 hover:to-lime-600 text-black border-none shadow-2xl shadow-yellow-500/25 transform hover:scale-105 transition-all duration-200 font-bold" asChild>
+                  <a href="tel:+93700017627">
+                    <PhoneIcon className="w-5 h-5 mr-2" />
+                    +93 700 017 627
+                  </a>
+                </Button>
+              </div>
+              <div className="flex justify-center">
+                <Button size="lg" className="text-lg px-8 py-4 border-white/30 text-white hover:bg-white hover:text-slate-900 backdrop-blur-sm transform hover:scale-105 transition-all duration-200 bg-white/10" asChild>
+                  <a href="mailto:support@ipemelere.com">
+                    <EnvelopeIcon className="w-5 h-5 mr-2" />
+                    Email Support
+                  </a>
+                </Button>
+              </div>
             </div>
             
             {/* Response Time Stats */}

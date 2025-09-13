@@ -382,8 +382,13 @@ export default function PrivacyPage() {
                   <PhoneIcon className="w-6 h-6 text-primary" />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">Phone</h3>
-                <p className="text-muted-foreground">+265 888 81 93 33</p>
-                <p className="text-sm text-muted-foreground mt-1">Available 24/7</p>
+                <div className="space-y-1">
+                  <p className="text-muted-foreground">+265 888 81 93 33</p>
+                  <p className="text-muted-foreground">+265 999 35 54 61</p>
+                  <p className="text-muted-foreground">+27 739 476 681</p>
+                  <p className="text-muted-foreground">+93 700 017 627</p>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">Available 24/7</p>
               </div>
               
               <div className="bg-card border border-border rounded-lg p-6">
