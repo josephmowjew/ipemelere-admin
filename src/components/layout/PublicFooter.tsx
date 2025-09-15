@@ -40,13 +40,17 @@ export function PublicFooter({ className }: PublicFooterProps) {
               Safe, reliable, and affordable transport services across Malawi. 
               Your trusted ride-hailing partner for daily commutes and special occasions.
             </p>
-            <div className="flex space-x-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                24/7 Service
-              </span>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-                Licensed & Insured
-              </span>
+            <div className="space-y-2">
+              <div>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                  24/7 Service
+                </span>
+              </div>
+              <div>
+                <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                  Registered Passenger Carrying Vehicles (RED NUMBERS) with Passenger Category Drivers
+                </span>
+              </div>
             </div>
           </div>
 
