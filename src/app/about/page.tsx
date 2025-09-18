@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { 
+import {
   UsersIcon,
   TruckIcon,
   MapPinIcon,
@@ -13,6 +13,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { PublicHeader } from '@/components/layout/PublicHeader';
 import { PublicFooter } from '@/components/layout/PublicFooter';
+import { TeamSection } from '@/components/ui/TeamSection';
+import { TeamSection as TeamSectionType } from '@/types/team';
 
 export const metadata = {
   title: 'About Us - Ipemelere Transport Services',
@@ -71,23 +73,23 @@ export default function AboutPage() {
     },
   ];
 
-  const teamMembers = [
-    {
-      name: 'Management Team',
-      role: 'Leadership',
-      description: 'Experienced professionals committed to excellence in transport services.',
-    },
-    {
-      name: 'Driver Partners',
-      role: 'Service Delivery',
-      description: 'Carefully selected and trained drivers who prioritize your safety and comfort.',
-    },
-    {
-      name: 'Customer Support',
-      role: 'Support',
-      description: 'Dedicated team available 24/7 to assist with your transportation needs.',
-    },
-  ];
+  const teamSection: TeamSectionType = {
+    title: 'Our Team',
+    description: 'Dedicated professionals committed to serving you better',
+    members: [
+      {
+        id: 'wakisa-mwenelupembe',
+        name: 'Wakisa Mwenelupembe',
+        role: 'Team Member',
+        description: 'Dedicated professional committed to excellence in transport services and customer satisfaction.',
+        image: '/wakisa.jpg',
+        isActive: true,
+        socialLinks: {
+          email: 'ganyuipemelere@gmail.com'
+        }
+      }
+    ]
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -370,52 +372,7 @@ export default function AboutPage() {
         </section>
 
         {/* Team */}
-        <section className="py-24 sm:py-32 bg-gradient-to-b from-white to-slate-50 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-green-50/30 to-yellow-50/30"></div>
-          
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-20">
-              <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-green-100 to-yellow-100 text-slate-700 text-sm font-semibold mb-6">
-                👥 Our People
-              </div>
-              <h2 className="text-4xl sm:text-5xl font-black text-slate-900 mb-6">
-                Our 
-                <span className="bg-gradient-to-r from-green-600 to-yellow-600 bg-clip-text text-transparent"> Team</span>
-              </h2>
-              <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-                Dedicated professionals committed to serving you better
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {teamMembers.map((member, index) => (
-                <div key={index} className="group relative">
-                  <div className="bg-white rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-4 border border-slate-100 text-center relative overflow-hidden">
-                    {/* Background decoration */}
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-100/50 to-yellow-100/50 rounded-full transform translate-x-16 -translate-y-16 group-hover:scale-150 transition-transform duration-700"></div>
-                    
-                    {/* Content */}
-                    <div className="relative z-10">
-                      <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-yellow-600 rounded-full flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-transform duration-300">
-                        <UsersIcon className="w-10 h-10 text-white" />
-                      </div>
-                      <h3 className="text-2xl font-bold text-slate-900 mb-3 group-hover:text-green-600 transition-colors duration-300">
-                        {member.name}
-                      </h3>
-                      <p className="text-yellow-600 font-bold text-lg mb-6">
-                        {member.role}
-                      </p>
-                      <p className="text-slate-600 leading-6">
-                        {member.description}
-                      </p>
-                      <div className="mt-8 w-16 h-1 bg-gradient-to-r from-green-500 to-yellow-600 rounded-full mx-auto transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        <TeamSection section={teamSection} />
 
         {/* Call to Action */}
         <section className="py-24 sm:py-32 bg-gradient-to-br from-slate-900 via-green-900 to-black text-white relative overflow-hidden">
