@@ -20,6 +20,11 @@ export const metadata: Metadata = {
     template: "%s | Ipemelere Transport",
   },
   description: "Safe, reliable, and affordable ride-hailing services across Lilongwe, Malawi. Book your ride with Ipemelere - your trusted transport partner available 24/7.",
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon-96x96.png',
+  },
   keywords: [
     "Malawi transport",
     "Lilongwe taxi",
