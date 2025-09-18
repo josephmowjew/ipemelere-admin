@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { Bars3Icon, XMarkIcon, PhoneIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -13,6 +14,7 @@ interface PublicHeaderProps {
 
 export function PublicHeader({ className }: PublicHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   const navigation = [
     { name: 'Home', href: '/' },
@@ -64,15 +66,23 @@ export function PublicHeader({ className }: PublicHeaderProps) {
           {/* Desktop navigation */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="text-foreground hover:text-primary px-3 py-2 text-sm font-medium transition-colors rounded-md hover:bg-accent"
-                >
-                  {item.name}
-                </Link>
-              ))}
+              {navigation.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={cn(
+                      "px-3 py-2 text-sm font-medium transition-colors rounded-md",
+                      isActive
+                        ? "text-white bg-accent font-semibold"
+                        : "text-foreground hover:text-primary hover:bg-accent"
+                    )}
+                  >
+                    {item.name}
+                  </Link>
+                );
+              })}
             </div>
           </div>
 
@@ -109,16 +119,24 @@ export function PublicHeader({ className }: PublicHeaderProps) {
         {isMobileMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-border">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors hover:bg-accent"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {item.name}
-                </Link>
-              ))}
+              {navigation.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={cn(
+                      "block px-3 py-2 rounded-md text-base font-medium transition-colors",
+                      isActive
+                        ? "text-primary bg-accent font-semibold"
+                        : "text-foreground hover:text-primary hover:bg-accent"
+                    )}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                );
+              })}
               <div className="px-3 pt-4 pb-3 border-t border-border space-y-2">
                 <Button variant="outline" size="sm" className="w-full" asChild>
                   <Link href="#download">Download App</Link>
