@@ -66,11 +66,11 @@ export default function AboutPage() {
       title: 'Mobile App Launch',
       description: 'Planned Android and iOS apps for seamless booking',
     },
-    {
-      year: '2025',
-      title: 'Expansion to Blantyre',
-      description: 'Growing our services to serve more Malawians',
-    },
+    // {
+    //   year: '2025',
+    //   title: 'Expansion to Blantyre',
+    //   description: 'Growing our services to serve more Malawians',
+    // },
   ];
 
   const teamSection: TeamSectionType = {
