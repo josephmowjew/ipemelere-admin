@@ -68,7 +68,7 @@ export function PublicFooter({ className }: PublicFooterProps) {
               <div className="flex items-center space-x-3">
                 <EnvelopeIcon className="h-5 w-5 text-primary flex-shrink-0" />
                 <div>
-                  <p className="text-sm text-foreground font-medium">support@ipemelere.com</p>
+                  <p className="text-sm text-foreground font-medium">ganyuipemelere@gmail.com</p>
                   <p className="text-xs text-muted-foreground">General Inquiries</p>
                 </div>
               </div>

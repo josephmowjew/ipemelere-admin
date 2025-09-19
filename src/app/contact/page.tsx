@@ -110,8 +110,8 @@ export default function ContactPage() {
     {
       icon: EnvelopeIcon,
       title: 'Email',
-      details: ['support@ipemelere.com', 'We respond within 24 hours'],
-      action: 'mailto:support@ipemelere.com',
+      details: ['ganyuipemelere@gmail.com', 'We respond within 24 hours'],
+      action: 'mailto:ganyuipemelere@gmail.com',
     },
     {
       icon: MapPinIcon,
@@ -179,7 +179,7 @@ export default function ContactPage() {
                   </a>
                 </Button>
                 <Button size="lg" className="text-lg px-8 py-4 border-white/30 text-white hover:bg-white hover:text-slate-900 backdrop-blur-sm transform hover:scale-105 transition-all duration-200 bg-white/10" asChild>
-                  <a href="mailto:support@ipemelere.com">
+                  <a href="mailto:ganyuipemelere@gmail.com">
                     Email Us
                     <EnvelopeIcon className="ml-2 w-5 h-5" />
                   </a>
@@ -458,7 +458,7 @@ export default function ContactPage() {
               </div>
               <div className="flex justify-center">
                 <Button size="lg" className="text-lg px-8 py-4 border-white/30 text-white hover:bg-white hover:text-slate-900 backdrop-blur-sm transform hover:scale-105 transition-all duration-200 bg-white/10" asChild>
-                  <a href="mailto:support@ipemelere.com">
+                  <a href="mailto:ganyuipemelere@gmail.com">
                     <EnvelopeIcon className="w-5 h-5 mr-2" />
                     Email Support
                   </a>

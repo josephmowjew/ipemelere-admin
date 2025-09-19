@@ -45,7 +45,7 @@ const structuredData = {
   },
   "url": typeof window !== 'undefined' ? window.location.origin : 'https://ipemelere.com',
   "telephone": "+2658888119333",
-  "email": "support@ipemelere.com",
+  "email": "ganyuipemelere@gmail.com",
   "openingHoursSpecification": {
     "@type": "OpeningHoursSpecification",
     "dayOfWeek": [
