@@ -241,7 +241,7 @@ export default function DashboardPage() {
         {/* Welcome section */}
         <div>
           <h1 className="text-3xl font-bold text-foreground">
-            Welcome to Ipemelere Admin
+            Welcome to Ganyu Ipemelere Admin
           </h1>
           <p className="text-muted-foreground mt-2">
             Monitor and manage your taxi and courier services platform

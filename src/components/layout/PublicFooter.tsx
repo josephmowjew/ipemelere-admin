@@ -30,7 +30,7 @@ export function PublicFooter({ className }: PublicFooterProps) {
             <Link href="/" className="flex items-center">
               <Image
                 src="/Ipemelere_Logo.png"
-                alt="Ipemelere"
+                alt="Ganyu Ipemelere"
                 width={120}
                 height={40}
                 className="h-10 w-auto"

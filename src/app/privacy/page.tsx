@@ -94,7 +94,7 @@ export default function PrivacyPage() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="prose prose-lg max-w-none">
               <p className="text-lg text-muted-foreground leading-8">
-                Ipemelere Transport Services (&ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;) is committed to protecting your privacy 
+                Ganyu Ipemelere Transport Services (&ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;) is committed to protecting your privacy 
                 and ensuring the security of your personal information. This Privacy Policy explains how we 
                 collect, use, disclose, and safeguard your information when you use our ride-hailing services 
                 in Malawi.

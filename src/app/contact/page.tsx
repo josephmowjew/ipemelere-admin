@@ -160,7 +160,7 @@ export default function ContactPage() {
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-white leading-tight">
                 Contact
                 <span className="block bg-gradient-to-r from-yellow-400 via-lime-400 to-green-400 bg-clip-text text-transparent">
-                  Ipemelere
+                 Ganyu Ipemelere
                 </span>
               </h1>
               <p className="mt-8 text-xl sm:text-2xl text-gray-100 leading-relaxed max-w-4xl mx-auto">

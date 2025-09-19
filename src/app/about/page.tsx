@@ -253,7 +253,7 @@ export default function AboutPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-6">
                 <p className="text-lg text-muted-foreground leading-7">
-                  Ipemelere was founded in 2024 with a simple but powerful vision: to make 
+                  Ganyu Ipemelere was founded in 2024 with a simple but powerful vision: to make 
                   transportation in Malawi safer, more reliable, and more accessible for everyone.
                 </p>
                 <p className="text-lg text-muted-foreground leading-7">
