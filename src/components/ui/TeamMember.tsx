@@ -37,7 +37,7 @@ export function TeamMember({ member, className = '' }: TeamMemberProps) {
             </div>
             {/* Gradient border effect */}
             <div className="absolute inset-0 rounded-full bg-gradient-to-br from-green-500 to-yellow-600 p-1 group-hover:shadow-2xl group-hover:shadow-green-500/25 transition-all duration-300">
-              <div className="w-full h-full rounded-full overflow-hidden bg-white p-1">
+              <div className="w-full h-full rounded-full overflow-hidden">
                 <Image
                   src={member.image}
                   alt={member.name}

@@ -80,12 +80,23 @@ export default function AboutPage() {
       {
         id: 'wakisa-mwenelupembe',
         name: 'Wakisa Mwenelupembe',
-        role: 'Team Member',
+        role: 'Founder',
         description: 'Dedicated professional committed to excellence in transport services and customer satisfaction.',
         image: '/wakisa.jpg',
         isActive: true,
         socialLinks: {
           email: 'ganyuipemelere@gmail.com'
+        }
+      },
+      {
+        id: 'alinafe-nankumba',
+        name: 'Alinafe Nankumba',
+        role: 'Team Executive',
+        description: 'Experienced professional focused on ensuring smooth operations and exceptional customer experience.',
+        image: '/team_member.webp',
+        isActive: true,
+        socialLinks: {
+          email: 'operations@ipemelere.com'
         }
       }
     ]
