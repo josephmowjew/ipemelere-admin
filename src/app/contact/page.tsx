@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { 
-  PhoneIcon, 
-  EnvelopeIcon, 
+import Image from 'next/image';
+import {
+  PhoneIcon,
+  EnvelopeIcon,
   MapPinIcon,
   ClockIcon,
   DevicePhoneMobileIcon,
@@ -438,12 +439,15 @@ export default function ContactPage() {
                       +265 888 81 93 33
                     </a>
                   </Button>
-                  <Button size="sm" className="text-sm px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-none shadow-xl transform hover:scale-105 transition-all duration-200 font-medium w-full" asChild>
-                    <a href="https://wa.me/265888819333" target="_blank" rel="noopener noreferrer">
-                      <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
-                      WhatsApp Chat
-                    </a>
-                  </Button>
+                  <a href="https://wa.me/265888819333" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center transform hover:scale-105 transition-all duration-200 h-12">
+                    <Image
+                      src="/WhatsAppButtonGreenSmall.svg"
+                      alt="Chat on WhatsApp"
+                      width={180}
+                      height={40}
+                      className="h-full w-auto"
+                    />
+                  </a>
                 </div>
                 <div className="space-y-2">
                   <Button size="lg" className="text-lg px-6 py-4 bg-gradient-to-r from-yellow-500 to-lime-500 hover:from-yellow-600 hover:to-lime-600 text-black border-none shadow-2xl shadow-yellow-500/25 transform hover:scale-105 transition-all duration-200 font-bold w-full" asChild>
@@ -452,12 +456,15 @@ export default function ContactPage() {
                       +265 999 35 54 61
                     </a>
                   </Button>
-                  <Button size="sm" className="text-sm px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-none shadow-xl transform hover:scale-105 transition-all duration-200 font-medium w-full" asChild>
-                    <a href="https://wa.me/265999355461" target="_blank" rel="noopener noreferrer">
-                      <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
-                      WhatsApp Chat
-                    </a>
-                  </Button>
+                  <a href="https://wa.me/265999355461" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center transform hover:scale-105 transition-all duration-200 h-12">
+                    <Image
+                      src="/WhatsAppButtonGreenSmall.svg"
+                      alt="Chat on WhatsApp"
+                      width={180}
+                      height={40}
+                      className="h-full w-auto"
+                    />
+                  </a>
                 </div>
                 <Button size="lg" className="text-lg px-6 py-4 bg-gradient-to-r from-yellow-500 to-lime-500 hover:from-yellow-600 hover:to-lime-600 text-black border-none shadow-2xl shadow-yellow-500/25 transform hover:scale-105 transition-all duration-200 font-bold" asChild>
                   <a href="tel:+27739476681">

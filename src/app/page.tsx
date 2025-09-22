@@ -8,8 +8,7 @@ import {
   CurrencyDollarIcon,
   DevicePhoneMobileIcon,
   StarIcon,
-  CheckIcon,
-  ChatBubbleLeftRightIcon
+  CheckIcon
 } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
 import { PublicHeader } from '@/components/layout/PublicHeader';
@@ -232,7 +231,7 @@ export default function LandingPage() {
                 {/* Stats */}
                 <div className="mt-16 grid grid-cols-3 gap-8 text-center lg:text-left">
                   <div className="group">
-                    <div className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-yellow-400 to-lime-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-200">12+</div>
+                    <div className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-yellow-400 to-lime-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-200">20+</div>
                     <div className="text-sm text-gray-300 uppercase tracking-wider font-medium">Vehicles</div>
                   </div>
                   <div className="group">
@@ -541,10 +540,15 @@ export default function LandingPage() {
                   <Button size="lg" variant="secondary" className="text-base px-6 py-3" asChild>
                     <Link href="tel:+2658888119333">📞 +265 888 81 93 33</Link>
                   </Button>
-                  <Button size="lg" className="text-base px-6 py-3 bg-green-600 hover:bg-green-700 text-white" asChild>
-                    <Link href="https://wa.me/265888819333" target="_blank" rel="noopener noreferrer">
-                      <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
-                      WhatsApp
+                  <Button size="lg" variant="secondary" className="text-base px-6 py-3 p-0 border-0 bg-transparent hover:bg-transparent" asChild>
+                    <Link href="https://wa.me/265888819333" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center transform hover:scale-105 transition-all duration-200 w-full h-full">
+                      <Image
+                        src="/WhatsAppButtonGreenSmall.svg"
+                        alt="Chat on WhatsApp"
+                        width={160}
+                        height={36}
+                        className="max-h-9 w-auto"
+                      />
                     </Link>
                   </Button>
                 </div>
@@ -552,10 +556,15 @@ export default function LandingPage() {
                   <Button size="lg" variant="secondary" className="text-base px-6 py-3" asChild>
                     <Link href="tel:+265999355461">📞 +265 999 35 54 61</Link>
                   </Button>
-                  <Button size="lg" className="text-base px-6 py-3 bg-green-600 hover:bg-green-700 text-white" asChild>
-                    <Link href="https://wa.me/265999355461" target="_blank" rel="noopener noreferrer">
-                      <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
-                      WhatsApp
+                  <Button size="lg" variant="secondary" className="text-base px-6 py-3 p-0 border-0 bg-transparent hover:bg-transparent" asChild>
+                    <Link href="https://wa.me/265999355461" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center transform hover:scale-105 transition-all duration-200 w-full h-full">
+                      <Image
+                        src="/WhatsAppButtonGreenSmall.svg"
+                        alt="Chat on WhatsApp"
+                        width={160}
+                        height={36}
+                        className="max-h-9 w-auto"
+                      />
                     </Link>
                   </Button>
                 </div>
