@@ -429,20 +429,36 @@ export default function ContactPage() {
             </div>
             
             <div className="space-y-4">
-              <p className="text-lg text-white/90 mb-4">Call any of our numbers:</p>
+              <p className="text-lg text-white/90 mb-4">Call any of our numbers or chat on WhatsApp:</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Button size="lg" className="text-lg px-6 py-4 bg-gradient-to-r from-yellow-500 to-lime-500 hover:from-yellow-600 hover:to-lime-600 text-black border-none shadow-2xl shadow-yellow-500/25 transform hover:scale-105 transition-all duration-200 font-bold" asChild>
-                  <a href="tel:+2658888119333">
-                    <PhoneIcon className="w-5 h-5 mr-2" />
-                    +265 888 81 93 33
-                  </a>
-                </Button>
-                <Button size="lg" className="text-lg px-6 py-4 bg-gradient-to-r from-yellow-500 to-lime-500 hover:from-yellow-600 hover:to-lime-600 text-black border-none shadow-2xl shadow-yellow-500/25 transform hover:scale-105 transition-all duration-200 font-bold" asChild>
-                  <a href="tel:+265999355461">
-                    <PhoneIcon className="w-5 h-5 mr-2" />
-                    +265 999 35 54 61
-                  </a>
-                </Button>
+                <div className="space-y-2">
+                  <Button size="lg" className="text-lg px-6 py-4 bg-gradient-to-r from-yellow-500 to-lime-500 hover:from-yellow-600 hover:to-lime-600 text-black border-none shadow-2xl shadow-yellow-500/25 transform hover:scale-105 transition-all duration-200 font-bold w-full" asChild>
+                    <a href="tel:+2658888119333">
+                      <PhoneIcon className="w-5 h-5 mr-2" />
+                      +265 888 81 93 33
+                    </a>
+                  </Button>
+                  <Button size="sm" className="text-sm px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-none shadow-xl transform hover:scale-105 transition-all duration-200 font-medium w-full" asChild>
+                    <a href="https://wa.me/265888819333" target="_blank" rel="noopener noreferrer">
+                      <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
+                      WhatsApp Chat
+                    </a>
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  <Button size="lg" className="text-lg px-6 py-4 bg-gradient-to-r from-yellow-500 to-lime-500 hover:from-yellow-600 hover:to-lime-600 text-black border-none shadow-2xl shadow-yellow-500/25 transform hover:scale-105 transition-all duration-200 font-bold w-full" asChild>
+                    <a href="tel:+265999355461">
+                      <PhoneIcon className="w-5 h-5 mr-2" />
+                      +265 999 35 54 61
+                    </a>
+                  </Button>
+                  <Button size="sm" className="text-sm px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-none shadow-xl transform hover:scale-105 transition-all duration-200 font-medium w-full" asChild>
+                    <a href="https://wa.me/265999355461" target="_blank" rel="noopener noreferrer">
+                      <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
+                      WhatsApp Chat
+                    </a>
+                  </Button>
+                </div>
                 <Button size="lg" className="text-lg px-6 py-4 bg-gradient-to-r from-yellow-500 to-lime-500 hover:from-yellow-600 hover:to-lime-600 text-black border-none shadow-2xl shadow-yellow-500/25 transform hover:scale-105 transition-all duration-200 font-bold" asChild>
                   <a href="tel:+27739476681">
                     <PhoneIcon className="w-5 h-5 mr-2" />

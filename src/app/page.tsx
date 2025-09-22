@@ -1,14 +1,15 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { 
-  MapPinIcon, 
-  ClockIcon, 
+import {
+  MapPinIcon,
+  ClockIcon,
   ShieldCheckIcon,
   CurrencyDollarIcon,
   DevicePhoneMobileIcon,
   StarIcon,
-  CheckIcon
+  CheckIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
 import { PublicHeader } from '@/components/layout/PublicHeader';
@@ -534,14 +535,30 @@ export default function LandingPage() {
             </div>
             
             <div className="mt-12 text-center">
-              <p className="text-lg mb-6">Need a ride right now?</p>
+              <p className="text-lg mb-6">Need a ride right now? Call or chat on WhatsApp:</p>
               <div className="space-y-3">
-                <Button size="lg" variant="secondary" className="text-lg px-8 py-3 block w-full max-w-md mx-auto" asChild>
-                  <Link href="tel:+2658888119333">+265 888 81 93 33</Link>
-                </Button>
-                <Button size="lg" variant="secondary" className="text-lg px-8 py-3 block w-full max-w-md mx-auto" asChild>
-                  <Link href="tel:+265999355461">+265 999 35 54 61</Link>
-                </Button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-md mx-auto">
+                  <Button size="lg" variant="secondary" className="text-base px-6 py-3" asChild>
+                    <Link href="tel:+2658888119333">📞 +265 888 81 93 33</Link>
+                  </Button>
+                  <Button size="lg" className="text-base px-6 py-3 bg-green-600 hover:bg-green-700 text-white" asChild>
+                    <Link href="https://wa.me/265888819333" target="_blank" rel="noopener noreferrer">
+                      <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
+                      WhatsApp
+                    </Link>
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-md mx-auto">
+                  <Button size="lg" variant="secondary" className="text-base px-6 py-3" asChild>
+                    <Link href="tel:+265999355461">📞 +265 999 35 54 61</Link>
+                  </Button>
+                  <Button size="lg" className="text-base px-6 py-3 bg-green-600 hover:bg-green-700 text-white" asChild>
+                    <Link href="https://wa.me/265999355461" target="_blank" rel="noopener noreferrer">
+                      <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
+                      WhatsApp
+                    </Link>
+                  </Button>
+                </div>
                 <Button size="lg" variant="secondary" className="text-lg px-8 py-3 block w-full max-w-md mx-auto" asChild>
                   <Link href="tel:+27739476681">+27 739 476 681</Link>
                 </Button>
