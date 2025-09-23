@@ -196,8 +196,8 @@ export class PassengerService {
    */
   static async getPassenger(id: number): Promise<Passenger> {
     try {
-      const response = await api.get<{ passenger: PassengerAPIResponse }>(`/admin/passengers/${id}`);
-      return PassengerTransformer.fromAPI(response.data.passenger);
+      const response = await api.get<PassengerAPIResponse>(`/admin/passengers/${id}`);
+      return PassengerTransformer.fromAPI(response.data);
     } catch (error) {
       console.error('Failed to fetch passenger:', error);
       return this.getMockPassenger(id);
@@ -209,11 +209,11 @@ export class PassengerService {
    */
   static async updatePassenger(id: number, data: PassengerUpdateData): Promise<Passenger> {
     try {
-      const response = await api.put<PassengerApiResponse>(
-        `/admin/passengers/${id}`, 
+      const response = await api.put<PassengerAPIResponse>(
+        `/admin/passengers/${id}`,
         PassengerTransformer.toAPI(data)
       );
-      return PassengerTransformer.fromAPI(response.data.data as unknown as PassengerAPIResponse);
+      return PassengerTransformer.fromAPI(response.data);
     } catch (error) {
       console.error('Failed to update passenger:', error);
       throw error;
@@ -225,11 +225,11 @@ export class PassengerService {
    */
   static async updatePassengerStatus(id: number, data: PassengerStatusChangeData): Promise<Passenger> {
     try {
-      const response = await api.put<PassengerApiResponse>(
+      const response = await api.put<PassengerAPIResponse>(
         `/admin/passengers/${id}/status`,
         data
       );
-      return PassengerTransformer.fromAPI(response.data.data as unknown as PassengerAPIResponse);
+      return PassengerTransformer.fromAPI(response.data);
     } catch (error) {
       console.error('Failed to update passenger status:', error);
       throw error;
@@ -241,8 +241,8 @@ export class PassengerService {
    */
   static async getPassengerActivity(id: number): Promise<PassengerActivity[]> {
     try {
-      const response = await api.get<PassengerApiResponse<PassengerActivity[]>>(`/admin/passengers/${id}/activity`);
-      return response.data.data;
+      const response = await api.get<PassengerActivity[]>(`/admin/passengers/${id}/activity`);
+      return response.data;
     } catch (error) {
       console.error('Failed to fetch passenger activity:', error);
       return this.getMockActivity();
@@ -273,8 +273,25 @@ export class PassengerService {
    */
   static async getPassengerStats(): Promise<PassengerStats> {
     try {
-      const response = await api.get<PassengerApiResponse<PassengerStats>>('/admin/passengers/stats');
-      return response.data.data;
+      const response = await api.get<{
+        totalPassengers: number;
+        activePassengers: number;
+        pendingVerification: number;
+        suspended: number;
+      }>('/admin/passengers/statistics');
+
+      // Transform your backend response to match the expected PassengerStats interface
+      return {
+        totalPassengers: response.data.totalPassengers,
+        activePassengers: response.data.activePassengers,
+        suspendedPassengers: response.data.suspended,
+        bannedPassengers: 0, // Not provided by your endpoint, using default
+        pendingVerification: response.data.pendingVerification,
+        verifiedPassengers: response.data.activePassengers, // Assuming active means verified
+        totalRides: 0, // Not provided by your endpoint, using default
+        totalRevenue: 0, // Not provided by your endpoint, using default
+        averageRidesPerPassenger: 0, // Not provided by your endpoint, using default
+      };
     } catch (error) {
       console.error('Failed to fetch passenger stats:', error);
       return this.getMockStats();
@@ -490,12 +507,12 @@ export class PassengerService {
       totalPassengers: 847,
       activePassengers: 720,
       suspendedPassengers: 15,
-      bannedPassengers: 2,
+      bannedPassengers: 0,
       pendingVerification: 110,
-      verifiedPassengers: 737,
-      totalRides: 12800,
-      totalRevenue: 2854000,
-      averageRidesPerPassenger: 15.1,
+      verifiedPassengers: 720,
+      totalRides: 0,
+      totalRevenue: 0,
+      averageRidesPerPassenger: 0,
     };
   }
 

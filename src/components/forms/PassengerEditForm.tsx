@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -168,20 +168,10 @@ export const PassengerEditForm: React.FC<PassengerFormProps> = ({
     clearErrors,
     setValue,
     watch,
+    reset,
   } = useForm<PassengerFormData>({
     mode: 'onBlur',
-    defaultValues: passenger ? {
-      firstName: passenger.firstName,
-      lastName: passenger.lastName,
-      email: passenger.email,
-      phoneNumber: passenger.phoneNumber,
-      district: passenger.district,
-      city: passenger.city,
-      address: passenger.address,
-      emergencyContactName: passenger.emergencyContact?.name || '',
-      emergencyContactPhone: passenger.emergencyContact?.phone || '',
-      emergencyContactRelationship: passenger.emergencyContact?.relationship || '',
-    } : {
+    defaultValues: {
       firstName: '',
       lastName: '',
       email: '',
@@ -209,6 +199,24 @@ export const PassengerEditForm: React.FC<PassengerFormProps> = ({
   // Update refs when props change
   onSubmitRef.current = onSubmit;
   onCancelRef.current = onCancel;
+
+  // Reset form when passenger data changes
+  useEffect(() => {
+    if (passenger) {
+      reset({
+        firstName: passenger.firstName,
+        lastName: passenger.lastName,
+        email: passenger.email,
+        phoneNumber: passenger.phoneNumber,
+        district: passenger.district,
+        city: passenger.city,
+        address: passenger.address,
+        emergencyContactName: passenger.emergencyContact?.name || '',
+        emergencyContactPhone: passenger.emergencyContact?.phone || '',
+        emergencyContactRelationship: passenger.emergencyContact?.relationship || '',
+      });
+    }
+  }, [passenger, reset]);
 
   /**
    * Form submission handler
@@ -240,14 +248,6 @@ export const PassengerEditForm: React.FC<PassengerFormProps> = ({
     }
   }, [clearErrors, setError, lastSubmitTime]);
 
-  /**
-   * Field change handlers to clear errors
-   */
-  const createFieldChangeHandler = useCallback((fieldName: keyof PassengerFormData) => () => {
-    if (errors[fieldName]) {
-      clearErrors(fieldName);
-    }
-  }, [errors, clearErrors]);
 
   /**
    * District change handler
@@ -276,10 +276,11 @@ export const PassengerEditForm: React.FC<PassengerFormProps> = ({
   const formState = useMemo(() => ({
     isSubmitting: isSubmitting || loading,
     hasErrors: Object.keys(errors).length > 0,
-    canSubmit: !isSubmitting && !loading && (mode === 'create' || isDirty),
+    canSubmit: !isSubmitting && !loading && Object.keys(errors).length === 0,
     canCancel: !isSubmitting && !loading,
     showRateLimit: submitAttempts >= 3,
     isReadOnly: mode === 'view',
+    isDirty,
   }), [isSubmitting, loading, errors, mode, isDirty, submitAttempts]);
 
   /**
@@ -350,14 +351,13 @@ export const PassengerEditForm: React.FC<PassengerFormProps> = ({
                   id="firstName"
                   className={cn(
                     'h-10 transition-all duration-200',
-                    errors.firstName 
-                      ? 'border-destructive focus:border-destructive focus:ring-destructive/20' 
+                    errors.firstName
+                      ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
                       : 'focus:ring-primary/20 focus:border-primary hover:border-primary/50',
                     formState.isReadOnly && 'bg-muted cursor-default'
                   )}
                   placeholder="Enter first name"
                   autoComplete="given-name"
-                  onChange={createFieldChangeHandler('firstName')}
                   disabled={formState.isSubmitting || formState.isReadOnly}
                   readOnly={formState.isReadOnly}
                 />
@@ -380,14 +380,13 @@ export const PassengerEditForm: React.FC<PassengerFormProps> = ({
                   id="lastName"
                   className={cn(
                     'h-10 transition-all duration-200',
-                    errors.lastName 
-                      ? 'border-destructive focus:border-destructive focus:ring-destructive/20' 
+                    errors.lastName
+                      ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
                       : 'focus:ring-primary/20 focus:border-primary hover:border-primary/50',
                     formState.isReadOnly && 'bg-muted cursor-default'
                   )}
                   placeholder="Enter last name"
                   autoComplete="family-name"
-                  onChange={createFieldChangeHandler('lastName')}
                   disabled={formState.isSubmitting || formState.isReadOnly}
                   readOnly={formState.isReadOnly}
                 />
@@ -422,14 +421,13 @@ export const PassengerEditForm: React.FC<PassengerFormProps> = ({
                     id="email"
                     className={cn(
                       'h-10 pl-10 transition-all duration-200',
-                      errors.email 
-                        ? 'border-destructive focus:border-destructive focus:ring-destructive/20' 
+                      errors.email
+                        ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
                         : 'focus:ring-primary/20 focus:border-primary hover:border-primary/50',
                       formState.isReadOnly && 'bg-muted cursor-default'
                     )}
                     placeholder="passenger@example.com"
                     autoComplete="email"
-                    onChange={createFieldChangeHandler('email')}
                     disabled={formState.isSubmitting || formState.isReadOnly}
                     readOnly={formState.isReadOnly}
                   />
@@ -455,14 +453,13 @@ export const PassengerEditForm: React.FC<PassengerFormProps> = ({
                     id="phoneNumber"
                     className={cn(
                       'h-10 pl-10 transition-all duration-200',
-                      errors.phoneNumber 
-                        ? 'border-destructive focus:border-destructive focus:ring-destructive/20' 
+                      errors.phoneNumber
+                        ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
                         : 'focus:ring-primary/20 focus:border-primary hover:border-primary/50',
                       formState.isReadOnly && 'bg-muted cursor-default'
                     )}
                     placeholder="+265991234567"
                     autoComplete="tel"
-                    onChange={createFieldChangeHandler('phoneNumber')}
                     disabled={formState.isSubmitting || formState.isReadOnly}
                     readOnly={formState.isReadOnly}
                   />
@@ -506,7 +503,6 @@ export const PassengerEditForm: React.FC<PassengerFormProps> = ({
                     )}
                     onChange={(e) => {
                       handleDistrictChange(e.target.value);
-                      createFieldChangeHandler('district')();
                     }}
                     disabled={formState.isSubmitting}
                   >
@@ -537,14 +533,13 @@ export const PassengerEditForm: React.FC<PassengerFormProps> = ({
                   id="city"
                   className={cn(
                     'h-10 transition-all duration-200',
-                    errors.city 
-                      ? 'border-destructive focus:border-destructive focus:ring-destructive/20' 
+                    errors.city
+                      ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
                       : 'focus:ring-primary/20 focus:border-primary hover:border-primary/50',
                     formState.isReadOnly && 'bg-muted cursor-default'
                   )}
                   placeholder="Enter city"
                   autoComplete="address-level2"
-                  onChange={createFieldChangeHandler('city')}
                   disabled={formState.isSubmitting || formState.isReadOnly}
                   readOnly={formState.isReadOnly}
                 />
@@ -568,14 +563,13 @@ export const PassengerEditForm: React.FC<PassengerFormProps> = ({
                 id="address"
                 className={cn(
                   'h-10 transition-all duration-200',
-                  errors.address 
-                    ? 'border-destructive focus:border-destructive focus:ring-destructive/20' 
+                  errors.address
+                    ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
                     : 'focus:ring-primary/20 focus:border-primary hover:border-primary/50',
                   formState.isReadOnly && 'bg-muted cursor-default'
                 )}
                 placeholder="Enter full address (Area, landmarks, etc.)"
                 autoComplete="street-address"
-                onChange={createFieldChangeHandler('address')}
                 disabled={formState.isSubmitting || formState.isReadOnly}
                 readOnly={formState.isReadOnly}
               />
@@ -607,13 +601,12 @@ export const PassengerEditForm: React.FC<PassengerFormProps> = ({
                   id="emergencyContactName"
                   className={cn(
                     'h-10 transition-all duration-200',
-                    errors.emergencyContactName 
-                      ? 'border-destructive focus:border-destructive focus:ring-destructive/20' 
+                    errors.emergencyContactName
+                      ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
                       : 'focus:ring-primary/20 focus:border-primary hover:border-primary/50',
                     formState.isReadOnly && 'bg-muted cursor-default'
                   )}
                   placeholder="Enter contact name"
-                  onChange={createFieldChangeHandler('emergencyContactName')}
                   disabled={formState.isSubmitting || formState.isReadOnly}
                   readOnly={formState.isReadOnly}
                 />
@@ -636,13 +629,12 @@ export const PassengerEditForm: React.FC<PassengerFormProps> = ({
                   id="emergencyContactPhone"
                   className={cn(
                     'h-10 transition-all duration-200',
-                    errors.emergencyContactPhone 
-                      ? 'border-destructive focus:border-destructive focus:ring-destructive/20' 
+                    errors.emergencyContactPhone
+                      ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
                       : 'focus:ring-primary/20 focus:border-primary hover:border-primary/50',
                     formState.isReadOnly && 'bg-muted cursor-default'
                   )}
                   placeholder="+265991234567"
-                  onChange={createFieldChangeHandler('emergencyContactPhone')}
                   disabled={formState.isSubmitting || formState.isReadOnly}
                   readOnly={formState.isReadOnly}
                 />
@@ -675,7 +667,6 @@ export const PassengerEditForm: React.FC<PassengerFormProps> = ({
                     )}
                     onChange={(e) => {
                       handleRelationshipChange(e.target.value);
-                      createFieldChangeHandler('emergencyContactRelationship')();
                     }}
                     disabled={formState.isSubmitting}
                   >
@@ -743,6 +734,7 @@ export const PassengerEditForm: React.FC<PassengerFormProps> = ({
                 type="submit"
                 disabled={!formState.canSubmit}
                 className="px-6 min-w-[120px]"
+                title={!formState.canSubmit && !formState.isSubmitting && !formState.hasErrors ? 'Make changes to enable update' : ''}
               >
                 {formState.isSubmitting ? (
                   <span className="flex items-center gap-2">
@@ -754,7 +746,9 @@ export const PassengerEditForm: React.FC<PassengerFormProps> = ({
                   </span>
                 ) : (
                   <>
-                    {mode === 'create' ? 'Create Passenger' : 'Update Passenger'}
+                    {mode === 'create' ? 'Create Passenger' : (
+                      formState.isDirty ? 'Update Passenger' : 'Update Passenger (No changes)'
+                    )}
                   </>
                 )}
               </Button>

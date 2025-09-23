@@ -201,7 +201,7 @@ export default function PassengersPage() {
           <div className="flex items-center">
             <ExclamationTriangleIcon className="h-8 w-8 text-yellow-500" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Pending Verification</p>
+              <p className="text-sm font-medium text-muted-foreground">Pending Document Verification</p>
               <p className="text-2xl font-bold">
                 {stats?.pendingVerification?.toLocaleString() || passengers.filter(p => p.documentVerificationStatus === 'pending').length}
               </p>

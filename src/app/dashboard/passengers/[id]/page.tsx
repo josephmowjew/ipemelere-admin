@@ -5,31 +5,51 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { DetailPageLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { 
-  UserIcon, 
-  PhoneIcon, 
-  EnvelopeIcon, 
+import { PassengerEditForm } from '@/components/forms/PassengerEditForm';
+import {
+  UserIcon,
+  PhoneIcon,
+  EnvelopeIcon,
   MapPinIcon,
   CheckCircleIcon,
   XCircleIcon,
   ClockIcon,
   ExclamationTriangleIcon,
-  PencilIcon
+  PencilIcon,
+  XMarkIcon,
+  DocumentCheckIcon,
+  EyeIcon,
+  ArrowDownTrayIcon,
+  ChatBubbleLeftEllipsisIcon,
+  CloudArrowUpIcon,
+  PlusIcon
 } from '@heroicons/react/24/outline';
-import { usePassengerDetails, useUpdatePassengerStatus } from '@/hooks/api/usePassengerData';
-import type { Passenger } from '@/types/passenger';
+import { usePassengerDetails, useUpdatePassengerStatus, useUpdatePassenger } from '@/hooks/api/usePassengerData';
+import { usePassengerDocumentManagement, useUploadNationalId } from '@/hooks/api/useDocumentData';
+import { documentApi, type Document } from '@/lib/api/documents';
+import type { Passenger, PassengerFormData } from '@/types/passenger';
+import { useNotificationActions } from '@/contexts/NotificationContext';
 import { cn } from '@/lib/utils';
+import { DocumentUploadArea } from '@/components/ui/DocumentUploadArea';
+import { DocumentRejectDialog } from '@/components/dialogs/DocumentRejectDialog';
 
 export default function PassengerDetailPage() {
   const params = useParams();
   const router = useRouter();
   const passengerId = parseInt(params.id as string);
-  
+
+  // Local state for modals
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [rejectDialogDocument, setRejectDialogDocument] = useState<Document | null>(null);
+
+  // Notification actions
+  const { success, error } = useNotificationActions();
+
   // React Query hooks
   const {
     passenger,
@@ -40,8 +60,29 @@ export default function PassengerDetailPage() {
     passengerError,
     refetchAll
   } = usePassengerDetails(passengerId);
-  
+
+  // Document management hooks
+  const {
+    documents,
+    latestDocuments,
+    documentsByType,
+    isLoading: documentsLoading,
+    verifyDocument,
+    rejectDocument,
+    downloadDocument,
+    viewDocument,
+    overallStatus: documentOverallStatus,
+    isVerifying,
+    isRejecting,
+    isDownloading,
+    isViewing,
+  } = usePassengerDocumentManagement(passengerId);
+
+  // Separate upload mutation with proper error handling
+  const uploadMutation = useUploadNationalId();
+
   const updateStatusMutation = useUpdatePassengerStatus();
+  const updatePassengerMutation = useUpdatePassenger();
 
   // Status change handler using mutation
   const handleStatusChange = (newStatus: Passenger['status'], reason?: string) => {
@@ -54,7 +95,173 @@ export default function PassengerDetailPage() {
         reason,
         adminNotes: reason
       }
+    }, {
+      onSuccess: () => {
+        success(
+          'Status Updated',
+          `Passenger status changed to ${newStatus}`,
+        );
+      },
+      onError: (err) => {
+        error(
+          'Status Update Failed',
+          err instanceof Error ? err.message : 'Failed to update passenger status',
+        );
+      }
     });
+  };
+
+  // Edit handlers
+  const handleEditClick = () => {
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditCancel = () => {
+    setIsEditModalOpen(false);
+  };
+
+  const handleEditSubmit = async (formData: PassengerFormData) => {
+    if (!passenger) return;
+
+    try {
+      await updatePassengerMutation.mutateAsync({
+        id: passenger.id,
+        data: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phoneNumber: formData.phoneNumber,
+          district: formData.district,
+          city: formData.city,
+          address: formData.address,
+          emergencyContactName: formData.emergencyContactName,
+          emergencyContactPhone: formData.emergencyContactPhone,
+          emergencyContactRelationship: formData.emergencyContactRelationship,
+        }
+      });
+
+      setIsEditModalOpen(false);
+      refetchAll(); // Refresh all data
+
+      success(
+        'Passenger Updated',
+        `Successfully updated ${formData.firstName} ${formData.lastName}`,
+      );
+    } catch (err) {
+      error(
+        'Update Failed',
+        err instanceof Error ? err.message : 'Failed to update passenger details',
+      );
+      console.error('Error updating passenger:', err);
+    }
+  };
+
+  // Document verification handlers
+  const handleDocumentVerify = async (document: Document, notes?: string) => {
+    try {
+      await verifyDocument(document.id, notes);
+      success(
+        'Document Verified',
+        `${documentApi.getDocumentTypeDisplayName(document.documentType)} has been approved`,
+      );
+    } catch (err) {
+      error(
+        'Verification Failed',
+        err instanceof Error ? err.message : 'Failed to verify document',
+      );
+    }
+  };
+
+  const handleDocumentReject = async (reason: string, notes?: string) => {
+    if (!rejectDialogDocument) return;
+
+    try {
+      await rejectDocument(rejectDialogDocument.id, reason, notes);
+      success(
+        'Document Rejected',
+        `${documentApi.getDocumentTypeDisplayName(rejectDialogDocument.documentType)} has been rejected`,
+      );
+    } catch (err) {
+      error(
+        'Rejection Failed',
+        err instanceof Error ? err.message : 'Failed to reject document',
+      );
+      throw err; // Re-throw to let dialog handle it
+    }
+  };
+
+  const openRejectDialog = (document: Document) => {
+    setRejectDialogDocument(document);
+  };
+
+  const closeRejectDialog = () => {
+    setRejectDialogDocument(null);
+  };
+
+  const handleDocumentDownload = async (document: Document) => {
+    try {
+      await downloadDocument(document.id);
+      success(
+        'Download Started',
+        `Downloading ${documentApi.getDocumentTypeDisplayName(document.documentType)}`,
+      );
+    } catch (err) {
+      error(
+        'Download Failed',
+        err instanceof Error ? err.message : 'Failed to download document',
+      );
+    }
+  };
+
+  const handleDocumentView = async (document: Document) => {
+    try {
+      await viewDocument(document.id);
+      success(
+        'Document Opened',
+        `Opening ${documentApi.getDocumentTypeDisplayName(document.documentType)} in new tab`,
+      );
+    } catch (err) {
+      error(
+        'View Failed',
+        err instanceof Error ? err.message : 'Failed to open document',
+      );
+    }
+  };
+
+  // Document upload handler
+  const handleDocumentUpload = (file: File, notes?: string) => {
+    uploadMutation.mutate(
+      { passengerId, data: { file, notes } },
+      {
+        onSuccess: (response) => {
+          success(
+            'Document Uploaded',
+            `National ID document uploaded successfully for ${passenger?.firstName} ${passenger?.lastName}`,
+          );
+        },
+        onError: (err) => {
+          console.error('Upload error:', err);
+          let errorMessage = 'Failed to upload document';
+
+          // Handle different types of errors
+          if (err instanceof Error) {
+            errorMessage = err.message;
+          } else if (typeof err === 'object' && err !== null) {
+            // Handle API error response
+            const apiError = err as any;
+            if (apiError.response?.data?.message) {
+              errorMessage = apiError.response.data.message;
+            } else if (apiError.message) {
+              errorMessage = apiError.message;
+            }
+          }
+
+          error(
+            'Upload Failed',
+            errorMessage,
+          );
+        }
+      }
+    );
   };
 
   if (isLoading) {
@@ -96,7 +303,12 @@ export default function PassengerDetailPage() {
 
   const actions = (
     <div className="flex items-center gap-2">
-      <Button variant="outline" size="sm">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleEditClick}
+        disabled={isLoading || hasError}
+      >
         <PencilIcon className="h-4 w-4 mr-2" />
         Edit Details
       </Button>
@@ -177,6 +389,63 @@ export default function PassengerDetailPage() {
         </div>
       </Card>
 
+      {/* Verification Status */}
+      <Card className="p-4">
+        <h3 className="text-lg font-semibold mb-3">Verification Status</h3>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Overall Status</span>
+            {documentsLoading ? (
+              <ClockIcon className="h-4 w-4 text-gray-400 animate-spin" />
+            ) : (
+              <span className={cn(
+                'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
+                documentApi.getStatusColorClass(documentOverallStatus as any)
+              )}>
+                {documentOverallStatus.charAt(0).toUpperCase() + documentOverallStatus.slice(1).replace('_', ' ')}
+              </span>
+            )}
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Email Verified</span>
+            {passenger.emailVerificationStatus === 'verified' ? (
+              <CheckCircleIcon className="h-4 w-4 text-green-500" />
+            ) : (
+              <ClockIcon className="h-4 w-4 text-yellow-500" />
+            )}
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Phone Verified</span>
+            {passenger.phoneVerificationStatus === 'verified' ? (
+              <CheckCircleIcon className="h-4 w-4 text-green-500" />
+            ) : (
+              <ClockIcon className="h-4 w-4 text-yellow-500" />
+            )}
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Documents</span>
+            {documentsLoading ? (
+              <ClockIcon className="h-4 w-4 text-gray-400 animate-spin" />
+            ) : documentOverallStatus === 'verified' ? (
+              <CheckCircleIcon className="h-4 w-4 text-green-500" />
+            ) : documentOverallStatus === 'rejected' ? (
+              <XCircleIcon className="h-4 w-4 text-red-500" />
+            ) : documentOverallStatus === 'pending' ? (
+              <ClockIcon className="h-4 w-4 text-yellow-500" />
+            ) : (
+              <ExclamationTriangleIcon className="h-4 w-4 text-gray-500" />
+            )}
+          </div>
+          {!documentsLoading && latestDocuments && (
+            <div className="pt-2 border-t border-border">
+              <p className="text-xs text-muted-foreground">
+                {latestDocuments.length} document{latestDocuments.length !== 1 ? 's' : ''} uploaded
+              </p>
+            </div>
+          )}
+        </div>
+      </Card>
+
       {/* Quick Stats */}
       <Card className="p-4">
         <h3 className="text-lg font-semibold mb-3">Quick Stats</h3>
@@ -198,7 +467,7 @@ export default function PassengerDetailPage() {
           <div className="flex justify-between">
             <span className="text-sm text-muted-foreground">Last Activity</span>
             <span className="font-medium">
-              {passenger.lastActivity 
+              {passenger.lastActivity
                 ? new Date(passenger.lastActivity).toLocaleDateString()
                 : 'Never'
               }
@@ -312,6 +581,180 @@ export default function PassengerDetailPage() {
           </div>
         </Card>
 
+        {/* Document Verification */}
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <DocumentCheckIcon className="h-5 w-5" />
+              Document Verification
+            </h3>
+            <div className="flex items-center gap-2">
+              {documentsLoading ? (
+                <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                  <ClockIcon className="h-3 w-3 mr-1 animate-spin" />
+                  Loading...
+                </div>
+              ) : (
+                <span className={cn(
+                  'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                  documentApi.getStatusColorClass(documentOverallStatus as any)
+                )}>
+                  {documentOverallStatus === 'verified' && <CheckCircleIcon className="h-3 w-3 mr-1" />}
+                  {documentOverallStatus === 'pending' && <ClockIcon className="h-3 w-3 mr-1" />}
+                  {documentOverallStatus === 'rejected' && <XCircleIcon className="h-3 w-3 mr-1" />}
+                  {documentOverallStatus === 'no_documents' && <ExclamationTriangleIcon className="h-3 w-3 mr-1" />}
+                  {documentOverallStatus.charAt(0).toUpperCase() + documentOverallStatus.slice(1).replace('_', ' ')}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Document Types */}
+          <div className="space-y-4">
+            {documentsLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="text-sm text-muted-foreground mt-2">Loading documents...</p>
+              </div>
+            ) : latestDocuments && latestDocuments.length > 0 ? (
+              latestDocuments.map((document) => (
+                <div key={document.id} className="border border-border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h4 className="font-medium text-foreground">
+                        {documentApi.getDocumentTypeDisplayName(document.documentType)}
+                      </h4>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>File: {document.originalFileName}</span>
+                        <span className={cn(
+                          'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
+                          documentApi.getStatusColorClass(document.status)
+                        )}>
+                          {document.status.charAt(0).toUpperCase() + document.status.slice(1).replace('_', ' ')}
+                        </span>
+                      </div>
+                      {document.documentType === 'national_id' && passenger.nationalId !== 'Not provided' && (
+                        <p className="text-sm text-muted-foreground">
+                          ID Number: {passenger.nationalId}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDocumentView(document)}
+                        disabled={isViewing || isDownloading}
+                      >
+                        <EyeIcon className="h-4 w-4 mr-2" />
+                        {isViewing ? 'Opening...' : 'View'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDocumentDownload(document)}
+                        disabled={isDownloading}
+                      >
+                        <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+                        {isDownloading ? 'Downloading...' : 'Download'}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Verification Actions */}
+                  {documentApi.canManageDocument(document.status) && (
+                    <div className="flex items-center gap-2 pt-3 border-t border-border">
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700"
+                        onClick={() => handleDocumentVerify(document, 'Document approved by admin')}
+                        disabled={isVerifying || isRejecting}
+                      >
+                        <CheckCircleIcon className="h-4 w-4 mr-2" />
+                        {isVerifying ? 'Approving...' : 'Approve'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 border-red-200 hover:bg-red-50"
+                        onClick={() => openRejectDialog(document)}
+                        disabled={isVerifying || isRejecting}
+                      >
+                        <XCircleIcon className="h-4 w-4 mr-2" />
+                        Reject
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <ChatBubbleLeftEllipsisIcon className="h-4 w-4 mr-2" />
+                        Add Note
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Document Status Messages */}
+                  {document.status === 'rejected' && document.rejectionReason && (
+                    <div className="mt-3 bg-red-50 border border-red-200 rounded-lg p-3">
+                      <h5 className="font-medium text-red-800 text-sm">Rejection Reason</h5>
+                      <p className="text-sm text-red-700 mt-1">{document.rejectionReason}</p>
+                      {document.adminNotes && (
+                        <p className="text-xs text-red-600 mt-2">Admin Notes: {document.adminNotes}</p>
+                      )}
+                      <p className="text-xs text-red-600 mt-1">
+                        Reviewed on: {document.verifiedAt ? new Date(document.verifiedAt).toLocaleDateString() : 'N/A'}
+                      </p>
+                    </div>
+                  )}
+
+                  {document.status === 'verified' && (
+                    <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-3">
+                      <h5 className="font-medium text-green-800 text-sm">Document Verified</h5>
+                      <p className="text-sm text-green-700">This document has been approved.</p>
+                      {document.adminNotes && (
+                        <p className="text-xs text-green-600 mt-2">Admin Notes: {document.adminNotes}</p>
+                      )}
+                      <p className="text-xs text-green-600 mt-1">
+                        Verified on: {document.verifiedAt ? new Date(document.verifiedAt).toLocaleDateString() : 'N/A'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <DocumentCheckIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h4 className="text-lg font-medium text-gray-900 mb-2">No Documents Uploaded</h4>
+                <p className="text-sm text-gray-500 mb-4">
+                  This passenger has not uploaded any documents yet.
+                </p>
+              </div>
+            )}
+
+            {/* Admin Upload Section */}
+            <div className="border-t border-border pt-6 mt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-medium text-foreground flex items-center gap-2">
+                  <CloudArrowUpIcon className="h-5 w-5" />
+                  Upload Document (Admin)
+                </h4>
+              </div>
+
+              <div className="space-y-4">
+                <div className="text-sm text-muted-foreground mb-3">
+                  Upload a National ID document on behalf of this passenger. This will help verify their identity.
+                </div>
+
+                {/* File Upload Area */}
+                <DocumentUploadArea
+                  onFileSelect={handleDocumentUpload}
+                  isUploading={uploadMutation.isPending}
+                  uploadError={uploadMutation.error}
+                  acceptedTypes="image/*,.pdf"
+                  maxSizeInMB={10}
+                />
+              </div>
+            </div>
+          </div>
+        </Card>
+
         {/* Recent Rides */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
@@ -378,6 +821,55 @@ export default function PassengerDetailPage() {
           )}
         </Card>
       </div>
+
+      {/* Edit Modal Overlay */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={handleEditCancel}
+          />
+
+          {/* Modal Content */}
+          <div className="relative z-10 max-h-[90vh] w-full max-w-4xl mx-4 overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 z-20 bg-background border-b border-border p-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Edit Passenger Details</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleEditCancel}
+                className="h-8 w-8 p-0"
+              >
+                <XMarkIcon className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Form */}
+            <div className="p-4">
+              <PassengerEditForm
+                passenger={passenger}
+                onSubmit={handleEditSubmit}
+                onCancel={handleEditCancel}
+                loading={updatePassengerMutation.isPending}
+                mode="edit"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Reject Dialog */}
+      {rejectDialogDocument && (
+        <DocumentRejectDialog
+          document={rejectDialogDocument}
+          isOpen={!!rejectDialogDocument}
+          onClose={closeRejectDialog}
+          onReject={handleDocumentReject}
+          isRejecting={isRejecting}
+        />
+      )}
     </DetailPageLayout>
   );
 }
