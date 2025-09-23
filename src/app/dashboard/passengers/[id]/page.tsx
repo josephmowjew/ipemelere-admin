@@ -26,8 +26,7 @@ import {
   EyeIcon,
   ArrowDownTrayIcon,
   ChatBubbleLeftEllipsisIcon,
-  CloudArrowUpIcon,
-  PlusIcon
+  CloudArrowUpIcon
 } from '@heroicons/react/24/outline';
 import { usePassengerDetails, useUpdatePassengerStatus, useUpdatePassenger } from '@/hooks/api/usePassengerData';
 import { usePassengerDocumentManagement, useUploadNationalId } from '@/hooks/api/useDocumentData';
@@ -63,9 +62,7 @@ export default function PassengerDetailPage() {
 
   // Document management hooks
   const {
-    documents,
     latestDocuments,
-    documentsByType,
     isLoading: documentsLoading,
     verifyDocument,
     rejectDocument,
@@ -156,37 +153,22 @@ export default function PassengerDetailPage() {
   };
 
   // Document verification handlers
-  const handleDocumentVerify = async (document: Document, notes?: string) => {
-    try {
-      await verifyDocument(document.id, notes);
-      success(
-        'Document Verified',
-        `${documentApi.getDocumentTypeDisplayName(document.documentType)} has been approved`,
-      );
-    } catch (err) {
-      error(
-        'Verification Failed',
-        err instanceof Error ? err.message : 'Failed to verify document',
-      );
-    }
+  const handleDocumentVerify = (document: Document, notes?: string) => {
+    verifyDocument(document.id, notes);
+    success(
+      'Document Verified',
+      `${documentApi.getDocumentTypeDisplayName(document.documentType)} has been approved`,
+    );
   };
 
   const handleDocumentReject = async (reason: string, notes?: string) => {
     if (!rejectDialogDocument) return;
 
-    try {
-      await rejectDocument(rejectDialogDocument.id, reason, notes);
-      success(
-        'Document Rejected',
-        `${documentApi.getDocumentTypeDisplayName(rejectDialogDocument.documentType)} has been rejected`,
-      );
-    } catch (err) {
-      error(
-        'Rejection Failed',
-        err instanceof Error ? err.message : 'Failed to reject document',
-      );
-      throw err; // Re-throw to let dialog handle it
-    }
+    rejectDocument(rejectDialogDocument.id, reason, notes);
+    success(
+      'Document Rejected',
+      `${documentApi.getDocumentTypeDisplayName(rejectDialogDocument.documentType)} has been rejected`,
+    );
   };
 
   const openRejectDialog = (document: Document) => {
@@ -197,71 +179,61 @@ export default function PassengerDetailPage() {
     setRejectDialogDocument(null);
   };
 
-  const handleDocumentDownload = async (document: Document) => {
-    try {
-      await downloadDocument(document.id);
-      success(
-        'Download Started',
-        `Downloading ${documentApi.getDocumentTypeDisplayName(document.documentType)}`,
-      );
-    } catch (err) {
-      error(
-        'Download Failed',
-        err instanceof Error ? err.message : 'Failed to download document',
-      );
-    }
+  const handleDocumentDownload = (document: Document) => {
+    downloadDocument(document.id);
+    success(
+      'Download Started',
+      `Downloading ${documentApi.getDocumentTypeDisplayName(document.documentType)}`,
+    );
   };
 
-  const handleDocumentView = async (document: Document) => {
-    try {
-      await viewDocument(document.id);
-      success(
-        'Document Opened',
-        `Opening ${documentApi.getDocumentTypeDisplayName(document.documentType)} in new tab`,
-      );
-    } catch (err) {
-      error(
-        'View Failed',
-        err instanceof Error ? err.message : 'Failed to open document',
-      );
-    }
+  const handleDocumentView = (document: Document) => {
+    viewDocument(document.id);
+    success(
+      'Document Opened',
+      `Opening ${documentApi.getDocumentTypeDisplayName(document.documentType)} in new tab`,
+    );
   };
 
   // Document upload handler
-  const handleDocumentUpload = (file: File, notes?: string) => {
-    uploadMutation.mutate(
-      { passengerId, data: { file, notes } },
-      {
-        onSuccess: (response) => {
-          success(
-            'Document Uploaded',
-            `National ID document uploaded successfully for ${passenger?.firstName} ${passenger?.lastName}`,
-          );
-        },
-        onError: (err) => {
-          console.error('Upload error:', err);
-          let errorMessage = 'Failed to upload document';
+  const handleDocumentUpload = async (file: File, notes?: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      uploadMutation.mutate(
+        { passengerId, data: { file, notes } },
+        {
+          onSuccess: () => {
+            success(
+              'Document Uploaded',
+              `National ID document uploaded successfully for ${passenger?.firstName} ${passenger?.lastName}`,
+            );
+            resolve();
+          },
+          onError: (err) => {
+            console.error('Upload error:', err);
+            let errorMessage = 'Failed to upload document';
 
-          // Handle different types of errors
-          if (err instanceof Error) {
-            errorMessage = err.message;
-          } else if (typeof err === 'object' && err !== null) {
-            // Handle API error response
-            const apiError = err as any;
-            if (apiError.response?.data?.message) {
-              errorMessage = apiError.response.data.message;
-            } else if (apiError.message) {
-              errorMessage = apiError.message;
+            // Handle different types of errors
+            if (err instanceof Error) {
+              errorMessage = err.message;
+            } else if (typeof err === 'object' && err !== null) {
+              // Handle API error response
+              const apiError = err as any;
+              if (apiError.response?.data?.message) {
+                errorMessage = apiError.response.data.message;
+              } else if (apiError.message) {
+                errorMessage = apiError.message;
+              }
             }
-          }
 
-          error(
-            'Upload Failed',
-            errorMessage,
-          );
+            error(
+              'Upload Failed',
+              errorMessage,
+            );
+            reject(new Error(errorMessage));
+          }
         }
-      }
-    );
+      );
+    });
   };
 
   if (isLoading) {
