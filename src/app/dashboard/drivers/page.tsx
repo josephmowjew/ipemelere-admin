@@ -5,8 +5,8 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ListPageLayout } from '@/components/layout/DashboardLayout';
 import { DriverSearchBar } from '@/components/ui/SearchBar';
 import { StatusFilter, DistrictFilter, FilterDropdown } from '@/components/ui/FilterDropdown';
@@ -21,7 +21,8 @@ import {
   ClockIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
-import { driverAPI, type Driver, type DriverListParams } from '@/lib/api/drivers';
+import { type Driver, type DriverListParams } from '@/lib/api/drivers';
+import { useDrivers, useDriverStats, useExportDrivers } from '@/hooks/api/useDriverData';
 import { MALAWI_DISTRICTS } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 
@@ -50,111 +51,111 @@ const DOCUMENT_STATUSES = [
 
 export default function DriversPage() {
   const router = useRouter();
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<DriverFilters>({
-    search: '',
-    status: [],
-    district: [],
-    vehicleType: [],
-    licenseStatus: [],
-    verificationStatus: []
-  });
-  const [pagination, setPagination] = useState({
+  const searchParams = useSearchParams();
+
+  // Initialize filters from URL parameters
+  const getInitialFilters = (): DriverFilters => {
+    const urlStatus = searchParams.get('status');
+    const urlDistrict = searchParams.get('district');
+    const urlVehicleType = searchParams.get('vehicleType');
+    const urlLicenseStatus = searchParams.get('licenseStatus');
+    const urlVerificationStatus = searchParams.get('verificationStatus');
+    const urlSearch = searchParams.get('search');
+
+    return {
+      search: urlSearch || '',
+      status: urlStatus ? [urlStatus] : [],
+      district: urlDistrict ? [urlDistrict] : [],
+      vehicleType: urlVehicleType ? [urlVehicleType] : [],
+      licenseStatus: urlLicenseStatus ? [urlLicenseStatus] : [],
+      verificationStatus: urlVerificationStatus ? [urlVerificationStatus] : []
+    };
+  };
+
+  const [filters, setFilters] = useState<DriverFilters>(getInitialFilters());
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Update filters when URL parameters change
+  useEffect(() => {
+    const newFilters = getInitialFilters();
+    setFilters(newFilters);
+    setCurrentPage(1);
+  }, [searchParams]);
+
+  // Build query parameters from filters
+  const queryParams: DriverListParams = {
+    page: currentPage,
+    limit: 50,
+    search: filters.search || undefined,
+    status: filters.status[0] as 'active' | 'inactive' | 'suspended' | 'pending_verification' || undefined,
+    district: filters.district[0] || undefined,
+    vehicleType: filters.vehicleType[0] as 'sedan' | 'hatchback' | 'suv' | 'minibus' || undefined,
+    licenseStatus: filters.licenseStatus[0] as Driver['licenseVerificationStatus'] || undefined,
+    verificationStatus: filters.verificationStatus[0] as 'verified' | 'pending' | 'rejected' || undefined,
+  };
+
+  // React Query hooks
+  const { data: driverData, isLoading, error } = useDrivers(queryParams);
+  const { data: stats } = useDriverStats();
+  const exportMutation = useExportDrivers();
+
+  // Extract data from React Query response
+  const drivers = driverData?.data || [];
+  const pagination = driverData?.pagination || {
     current_page: 1,
     per_page: 50,
     total: 0,
     total_pages: 0,
     has_next_page: false,
     has_prev_page: false
-  });
-
-  // Fetch drivers data
-  const fetchDrivers = useCallback(async (params: DriverListParams = {}) => {
-    try {
-      setLoading(true);
-      const response = await driverAPI.getDrivers({
-        page: pagination.current_page,
-        limit: 50,
-        ...params,
-        status: params.status || filters.status[0] as Driver['status'],
-        district: params.district || filters.district[0],
-        vehicleType: params.vehicleType || filters.vehicleType[0] as Driver['vehicle']['type'],
-        licenseStatus: params.licenseStatus || filters.licenseStatus[0] as Driver['licenseVerificationStatus'],
-        verificationStatus: params.verificationStatus || filters.verificationStatus[0] as 'verified' | 'pending' | 'rejected'
-      });
-      
-      setDrivers(response.data);
-      setPagination(response.pagination);
-    } catch (error) {
-      console.error('Failed to fetch drivers:', error);
-      // In a real app, show error toast/notification
-    } finally {
-      setLoading(false);
-    }
-  }, [pagination.current_page, filters.status, filters.district, filters.vehicleType, filters.licenseStatus, filters.verificationStatus]);
-
-  // Load drivers on mount and filter changes
-  useEffect(() => {
-    fetchDrivers({
-      search: filters.search || undefined
-    });
-  }, [filters, fetchDrivers]);
+  };
 
   // Filter handlers
   const handleSearch = (query: string) => {
     setFilters(prev => ({ ...prev, search: query }));
+    setCurrentPage(1); // Reset to first page when searching
   };
 
   const handleStatusChange = (statuses: string[]) => {
     setFilters(prev => ({ ...prev, status: statuses }));
+    setCurrentPage(1); // Reset to first page when filtering
   };
 
   const handleDistrictChange = (districts: string[]) => {
     setFilters(prev => ({ ...prev, district: districts }));
+    setCurrentPage(1); // Reset to first page when filtering
   };
 
   const handleVehicleTypeChange = (types: string[]) => {
     setFilters(prev => ({ ...prev, vehicleType: types }));
+    setCurrentPage(1); // Reset to first page when filtering
   };
 
   const handleLicenseStatusChange = (statuses: string[]) => {
     setFilters(prev => ({ ...prev, licenseStatus: statuses }));
+    setCurrentPage(1); // Reset to first page when filtering
   };
 
   const handleVerificationChange = (statuses: string[]) => {
     setFilters(prev => ({ ...prev, verificationStatus: statuses }));
+    setCurrentPage(1); // Reset to first page when filtering
   };
 
   // Pagination handlers
   const handlePageChange = (newPage: number) => {
-    setPagination(prev => ({ ...prev, current_page: newPage }));
-    fetchDrivers({ page: newPage });
+    setCurrentPage(newPage);
   };
 
-  // Export handler
-  const handleExport = async () => {
-    try {
-      const blob = await driverAPI.exportDrivers({
-        search: filters.search || undefined,
-        status: filters.status[0] as Driver['status'],
-        district: filters.district[0],
-        vehicleType: filters.vehicleType[0] as Driver['vehicle']['type'],
-        licenseStatus: filters.licenseStatus[0] as Driver['licenseVerificationStatus'],
-        verificationStatus: filters.verificationStatus[0] as 'verified' | 'pending' | 'rejected'
-      });
-      
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'drivers.csv';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('Export failed:', error);
-    }
+  // Export handler using mutation
+  const handleExport = () => {
+    exportMutation.mutate({
+      search: filters.search || undefined,
+      status: filters.status[0] as 'active' | 'inactive' | 'suspended' | 'pending_verification' || undefined,
+      district: filters.district[0] || undefined,
+      vehicleType: filters.vehicleType[0] as 'sedan' | 'hatchback' | 'suv' | 'minibus' || undefined,
+      licenseStatus: filters.licenseStatus[0] as Driver['licenseVerificationStatus'] || undefined,
+      verificationStatus: filters.verificationStatus[0] as 'verified' | 'pending' | 'rejected' || undefined,
+    });
   };
 
   // Search bar component
@@ -170,6 +171,7 @@ export default function DriversPage() {
       <StatusFilter
         selectedValues={filters.status}
         onSelectionChange={handleStatusChange}
+        statuses={['active', 'inactive', 'suspended', 'pending_verification']}
       />
       
       <DistrictFilter
@@ -202,9 +204,14 @@ export default function DriversPage() {
         statuses={['verified', 'pending', 'rejected']}
       />
       
-      <Button variant="outline" size="sm" onClick={handleExport}>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleExport}
+        disabled={exportMutation.isPending}
+      >
         <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
-        Export
+        {exportMutation.isPending ? 'Exporting...' : 'Export'}
       </Button>
     </div>
   );
@@ -231,12 +238,13 @@ export default function DriversPage() {
     { label: 'Drivers', href: '/dashboard/drivers', current: true }
   ];
 
-  // Calculate summary stats
-  const stats = {
-    total: pagination.total,
-    active: drivers.filter(d => d.status === 'active').length,
-    pendingDocuments: drivers.filter(d => d.documentVerificationStatus === 'pending').length,
-    pendingLicense: drivers.filter(d => d.licenseVerificationStatus === 'pending').length
+  // Use real stats from API, with fallback to calculated values
+  const summaryStats = {
+    total: stats?.totalDrivers ?? pagination.total,
+    active: stats?.activeDrivers ?? drivers.filter(d => d.status === 'active').length,
+    pendingVerification: stats?.pendingVerification ?? drivers.filter(d => d.status === 'pending_verification').length,
+    pendingDocuments: stats?.pendingVerification ?? drivers.filter(d => d.documentVerificationStatus === 'pending').length,
+    suspended: stats?.suspendedDrivers ?? drivers.filter(d => d.status === 'suspended').length
   };
 
   return (
@@ -254,37 +262,37 @@ export default function DriversPage() {
             <TruckIcon className="h-8 w-8 text-blue-500" />
             <div className="ml-4">
               <p className="text-sm font-medium text-muted-foreground">Total Drivers</p>
-              <p className="text-2xl font-bold">{stats.total.toLocaleString()}</p>
+              <p className="text-2xl font-bold">{summaryStats.total.toLocaleString()}</p>
             </div>
           </div>
         </Card>
-        
+
         <Card className="p-4">
           <div className="flex items-center">
             <CheckCircleIcon className="h-8 w-8 text-green-500" />
             <div className="ml-4">
               <p className="text-sm font-medium text-muted-foreground">Active</p>
-              <p className="text-2xl font-bold">{stats.active}</p>
+              <p className="text-2xl font-bold">{summaryStats.active.toLocaleString()}</p>
             </div>
           </div>
         </Card>
-        
+
         <Card className="p-4">
           <div className="flex items-center">
             <ClockIcon className="h-8 w-8 text-yellow-500" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Pending Documents</p>
-              <p className="text-2xl font-bold">{stats.pendingDocuments}</p>
+              <p className="text-sm font-medium text-muted-foreground">Pending Verification</p>
+              <p className="text-2xl font-bold">{summaryStats.pendingVerification.toLocaleString()}</p>
             </div>
           </div>
         </Card>
-        
+
         <Card className="p-4">
           <div className="flex items-center">
-            <DocumentCheckIcon className="h-8 w-8 text-orange-500" />
+            <DocumentCheckIcon className="h-8 w-8 text-red-500" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">License Review</p>
-              <p className="text-2xl font-bold">{stats.pendingLicense}</p>
+              <p className="text-sm font-medium text-muted-foreground">Suspended</p>
+              <p className="text-2xl font-bold">{summaryStats.suspended.toLocaleString()}</p>
             </div>
           </div>
         </Card>
@@ -307,7 +315,7 @@ export default function DriversPage() {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {isLoading ? (
                 // Loading skeleton
                 Array.from({ length: 10 }).map((_, index) => (
                   <tr key={index} className="border-b border-border">
@@ -318,6 +326,12 @@ export default function DriversPage() {
                     ))}
                   </tr>
                 ))
+              ) : error ? (
+                <tr>
+                  <td colSpan={8} className="p-8 text-center text-red-600">
+                    Error loading drivers: {error.message}
+                  </td>
+                </tr>
               ) : drivers.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="p-8 text-center text-muted-foreground">
@@ -337,7 +351,7 @@ export default function DriversPage() {
                     <td className="p-4">
                       <div>
                         <p className="text-sm">{driver.email}</p>
-                        <p className="text-sm">{driver.phoneNumber}</p>
+                        <p className="text-sm">{driver.phoneNumber || driver.phone}</p>
                         {driver.emailVerificationStatus === 'verified' ? (
                           <span className="text-xs text-green-600">✓ Email verified</span>
                         ) : (
@@ -347,16 +361,24 @@ export default function DriversPage() {
                     </td>
                     <td className="p-4">
                       <div>
-                        <p className="font-medium">{driver.vehicle.make} {driver.vehicle.model}</p>
-                        <p className="text-sm text-muted-foreground">{driver.vehicle.plateNumber}</p>
-                        <p className="text-sm text-muted-foreground capitalize">{driver.vehicle.type}</p>
+                        <p className="font-medium">
+                          {((driver.vehicle?.make || driver.vehicleDetails?.make) && (driver.vehicle?.model || driver.vehicleDetails?.model))
+                            ? `${driver.vehicle?.make || driver.vehicleDetails?.make} ${driver.vehicle?.model || driver.vehicleDetails?.model}`
+                            : 'Vehicle not registered'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {driver.vehicle?.plateNumber || driver.vehicleDetails?.plateNumber || 'N/A'}
+                        </p>
+                        <p className="text-sm text-muted-foreground capitalize">
+                          {driver.vehicle?.type || driver.vehicleDetails?.type || 'Unknown'}
+                        </p>
                       </div>
                     </td>
                     <td className="p-4">
                       <div>
                         <p className="text-sm">{driver.licenseNumber}</p>
                         <p className="text-sm text-muted-foreground">
-                          Expires: {new Date(driver.licenseExpiryDate).toLocaleDateString()}
+                          Expires: {driver.licenseExpiryDate ? new Date(driver.licenseExpiryDate).toLocaleDateString() : 'N/A'}
                         </p>
                         <span className={cn(
                           'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
@@ -373,11 +395,11 @@ export default function DriversPage() {
                       <span className={cn(
                         'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
                         driver.status === 'active' && 'bg-green-100 text-green-800',
-                        driver.status === 'suspended' && 'bg-yellow-100 text-yellow-800',
-                        driver.status === 'banned' && 'bg-red-100 text-red-800',
-                        driver.status === 'pending' && 'bg-gray-100 text-gray-800'
+                        driver.status === 'suspended' && 'bg-red-100 text-red-800',
+                        driver.status === 'inactive' && 'bg-gray-100 text-gray-800',
+                        driver.status === 'pending_verification' && 'bg-yellow-100 text-yellow-800'
                       )}>
-                        {driver.status}
+                        {driver.status === 'pending_verification' ? 'Pending Verification' : driver.status.charAt(0).toUpperCase() + driver.status.slice(1)}
                       </span>
                       {driver.currentShift && (
                         <p className="text-xs text-green-600 mt-1">● Online</p>
@@ -402,12 +424,14 @@ export default function DriversPage() {
                     </td>
                     <td className="p-4">
                       <div>
-                        <p className="text-sm font-medium">⭐ {driver.performance.averageRating.toFixed(1)}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {driver.performance.totalRides} rides
+                        <p className="text-sm font-medium">
+                          ⭐ {driver.performance?.averageRating?.toFixed(1) || 'N/A'}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {driver.performance.completionRate}% completion
+                          {driver.performance?.totalRides || 0} rides
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {driver.performance?.completionRate || 0}% completion
                         </p>
                       </div>
                     </td>

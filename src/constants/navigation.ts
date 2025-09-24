@@ -54,7 +54,7 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     icon: TruckIcon,
     children: [
       { id: 'drivers-list', name: 'All Drivers', href: '/dashboard/drivers' },
-      { id: 'drivers-pending', name: 'Pending Approval', href: '/dashboard/drivers?status=pending' },
+      { id: 'drivers-pending', name: 'Pending Verification', href: '/dashboard/drivers?status=pending_verification' },
       { id: 'drivers-active', name: 'Active', href: '/dashboard/drivers?status=active' },
     ],
   },

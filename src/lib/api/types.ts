@@ -112,6 +112,9 @@ export interface DriverAnalytics {
     completionRate: number;
     cancellationRate: number;
     averageResponseTime: number;
+    onTimeRate: number;
+    courteousRate: number;
+    vehicleConditionRate: number;
   };
   earnings: {
     thisWeek: number;
@@ -130,6 +133,11 @@ export interface DriverAnalytics {
       comment?: string;
       date: string;
     }>;
+  };
+  rideMetrics: {
+    averageDistance: number;
+    averageDuration: number;
+    totalHours: number;
   };
 }
 

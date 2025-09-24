@@ -5,9 +5,9 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { ChevronDownIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { type SidebarProps, type NavigationItem } from '@/types/layout';
@@ -88,9 +88,27 @@ function SidebarNavigation({ navigation, isCollapsed }: { navigation: Navigation
 // Individual navigation item with children support
 function NavigationItem({ item, isCollapsed }: { item: NavigationItem; isCollapsed: boolean }) {
   const pathname = usePathname();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const searchParams = useSearchParams();
   const hasChildren = item.children && item.children.length > 0;
-  const isActive = pathname === item.href || (hasChildren && item.children?.some(child => pathname === child.href));
+
+  // Build current full URL with search params
+  const currentUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
+
+  // Check if any child is active
+  const hasActiveChild = hasChildren && item.children?.some(child => {
+    return currentUrl === child.href || pathname === child.href;
+  });
+
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Update expansion state when route changes
+  useEffect(() => {
+    if (hasActiveChild) {
+      setIsExpanded(true);
+    }
+  }, [hasActiveChild]);
+
+  const isActive = pathname === item.href || hasActiveChild;
 
   if (isCollapsed) {
     return (
@@ -114,20 +132,23 @@ function NavigationItem({ item, isCollapsed }: { item: NavigationItem; isCollaps
       
       {hasChildren && isExpanded && (
         <div className="mt-1 space-y-1">
-          {item.children!.map((child) => (
-            <Link
-              key={child.id}
-              href={child.href}
-              className={cn(
-                'group flex items-center rounded-md py-2 pl-11 pr-3 text-sm font-medium transition-colors',
-                pathname === child.href
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-              )}
-            >
-              {child.name}
-            </Link>
-          ))}
+          {item.children!.map((child) => {
+            const isChildActive = currentUrl === child.href || pathname === child.href;
+            return (
+              <Link
+                key={child.id}
+                href={child.href}
+                className={cn(
+                  'group flex items-center rounded-md py-2 pl-11 pr-3 text-sm font-medium transition-colors',
+                  isChildActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                )}
+              >
+                {child.name}
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

@@ -221,17 +221,19 @@ export function FilterDropdown({
 }
 
 // Predefined filter dropdowns for common use cases
-export function StatusFilter({ 
-  selectedValues, 
-  onSelectionChange, 
-  statuses = ['active', 'suspended', 'pending', 'banned'],
-  ...props 
-}: Omit<FilterDropdownProps, 'label' | 'options'> & { 
+export function StatusFilter({
+  selectedValues,
+  onSelectionChange,
+  statuses = ['active', 'inactive', 'suspended', 'pending_verification'],
+  ...props
+}: Omit<FilterDropdownProps, 'label' | 'options'> & {
   statuses?: string[]
 }) {
   const options: FilterOption[] = statuses.map(status => ({
     value: status,
-    label: status.charAt(0).toUpperCase() + status.slice(1)
+    label: status === 'pending_verification'
+      ? 'Pending Verification'
+      : status.charAt(0).toUpperCase() + status.slice(1)
   }));
 
   return (

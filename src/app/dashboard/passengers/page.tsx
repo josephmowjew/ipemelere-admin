@@ -5,8 +5,8 @@
 
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ListPageLayout } from '@/components/layout/DashboardLayout';
 import { PassengerSearchBar } from '@/components/ui/SearchBar';
 import { StatusFilter, DistrictFilter } from '@/components/ui/FilterDropdown';
@@ -33,13 +33,32 @@ interface PassengerFilters {
 
 export default function PassengersPage() {
   const router = useRouter();
-  const [filters, setFilters] = useState<PassengerFilters>({
-    search: '',
-    status: [],
-    district: [],
-    verificationStatus: []
-  });
+  const searchParams = useSearchParams();
+
+  // Initialize filters from URL parameters
+  const getInitialFilters = (): PassengerFilters => {
+    const urlStatus = searchParams.get('status');
+    const urlDistrict = searchParams.get('district');
+    const urlVerification = searchParams.get('verificationStatus');
+    const urlSearch = searchParams.get('search');
+
+    return {
+      search: urlSearch || '',
+      status: urlStatus ? [urlStatus] : [],
+      district: urlDistrict ? [urlDistrict] : [],
+      verificationStatus: urlVerification ? [urlVerification] : []
+    };
+  };
+
+  const [filters, setFilters] = useState<PassengerFilters>(getInitialFilters());
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Update filters when URL parameters change
+  useEffect(() => {
+    const newFilters = getInitialFilters();
+    setFilters(newFilters);
+    setCurrentPage(1);
+  }, [searchParams]);
 
   // Build query parameters from filters
   const queryParams: PassengerListParams = {

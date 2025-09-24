@@ -138,7 +138,7 @@ class ApiClient {
    * Create axios instance with base configuration
    */
   private createAxiosInstance(): AxiosInstance {
-    const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://193.123.77.11/api/v1';
+    const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3002/api/v1';
     
     return axios.create({
       baseURL,
