@@ -9,6 +9,8 @@ export interface NavigationItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string | number;
+  disabled?: boolean;
+  comingSoon?: boolean;
   children?: Omit<NavigationItem, 'icon' | 'children'>[];
 }
 

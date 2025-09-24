@@ -15,7 +15,7 @@ import {
   type UseMutationResult,
   type InfiniteData
 } from '@tanstack/react-query';
-import { driverAPI, type Driver, type DriverListParams, type DriverUpdateData, type DriverStatusChangeData } from '@/lib/api/drivers';
+import { driverAPI, type Driver, type DriverListParams, type DriverUpdateData, type DriverStatusChangeData, type DocumentReviewData, type DriverDocument } from '@/lib/api/drivers';
 import type { PaginationResponse, ActivityRecord, RideRecord, DriverAnalytics } from '@/lib/api/types';
 
 // Query keys for consistent caching
@@ -222,6 +222,47 @@ export const useUpdateDriverStatus = () => {
     },
     onError: (error) => {
       console.error('Failed to update driver status:', error);
+    },
+  });
+};
+
+// Mutation hook for reviewing driver documents
+export const useReviewDriverDocument = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      driverId,
+      documentId,
+      data
+    }: {
+      driverId: number;
+      documentId: number;
+      data: DocumentReviewData
+    }): Promise<DriverDocument> => {
+      return driverAPI.reviewDocument(driverId, documentId, data);
+    },
+    onSuccess: (_, { driverId }) => {
+      // Invalidate driver details to refetch with updated document
+      queryClient.invalidateQueries({
+        queryKey: driverQueryKeys.detail(driverId)
+      });
+
+      // Invalidate driver documents
+      queryClient.invalidateQueries({
+        queryKey: driverQueryKeys.documents(driverId)
+      });
+
+      // Invalidate pending documents list
+      queryClient.invalidateQueries({
+        queryKey: driverQueryKeys.pendingDocuments()
+      });
+
+      // Invalidate driver lists (status might change)
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.lists() });
+    },
+    onError: (error) => {
+      console.error('Failed to review document:', error);
     },
   });
 };

@@ -156,43 +156,68 @@ function NavigationItem({ item, isCollapsed }: { item: NavigationItem; isCollaps
 }
 
 // Collapsed navigation item with tooltip
-function CollapsedNavigationItem({ 
-  item, 
-  isActive, 
-  hasChildren 
-}: { 
-  item: NavigationItem; 
-  isActive: boolean; 
+function CollapsedNavigationItem({
+  item,
+  isActive,
+  hasChildren
+}: {
+  item: NavigationItem;
+  isActive: boolean;
   hasChildren: boolean;
 }) {
   const [showTooltip, setShowTooltip] = useState(false);
 
+  const linkContent = (
+    <>
+      <item.icon className={cn(
+        "h-5 w-5",
+        item.disabled && "opacity-50"
+      )} />
+      {item.badge && (
+        <span className="absolute -top-1 -right-1 h-4 w-4 bg-destructive rounded-full text-xs text-destructive-foreground flex items-center justify-center">
+          {typeof item.badge === 'number' && item.badge > 9 ? '9+' : item.badge}
+        </span>
+      )}
+    </>
+  );
+
   return (
     <div className="relative">
-      <Link
-        href={item.href}
-        className={cn(
-          'group flex items-center justify-center rounded-md p-3 text-sm font-medium transition-colors',
-          isActive
-            ? 'bg-primary text-primary-foreground'
-            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-        )}
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
-      >
-        <item.icon className="h-5 w-5" />
-        {item.badge && (
-          <span className="absolute -top-1 -right-1 h-4 w-4 bg-destructive rounded-full text-xs text-destructive-foreground flex items-center justify-center">
-            {typeof item.badge === 'number' && item.badge > 9 ? '9+' : item.badge}
-          </span>
-        )}
-      </Link>
+      {item.disabled ? (
+        <div
+          className={cn(
+            'group flex items-center justify-center rounded-md p-3 text-sm font-medium cursor-not-allowed',
+            'text-muted-foreground/50 opacity-50'
+          )}
+          onMouseEnter={() => setShowTooltip(true)}
+          onMouseLeave={() => setShowTooltip(false)}
+        >
+          {linkContent}
+        </div>
+      ) : (
+        <Link
+          href={item.href}
+          className={cn(
+            'group flex items-center justify-center rounded-md p-3 text-sm font-medium transition-colors',
+            isActive
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+          )}
+          onMouseEnter={() => setShowTooltip(true)}
+          onMouseLeave={() => setShowTooltip(false)}
+        >
+          {linkContent}
+        </Link>
+      )}
       
       {showTooltip && (
         <div className="absolute left-full top-0 ml-2 z-50">
           <div className="bg-popover text-popover-foreground px-2 py-1 rounded-md shadow-lg text-sm whitespace-nowrap">
             {item.name}
-            {hasChildren && ' →'}
+            {item.disabled && item.comingSoon && (
+              <span className="text-xs text-muted-foreground block">Coming Soon</span>
+            )}
+            {hasChildren && !item.disabled && ' →'}
           </div>
         </div>
       )}
@@ -217,12 +242,25 @@ function NavigationLink({
   const content = (
     <>
       <div className="flex items-center flex-1 min-w-0">
-        <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
-        <span className="truncate">{item.name}</span>
-        {item.badge && (
+        <item.icon className={cn(
+          "mr-3 h-5 w-5 flex-shrink-0",
+          item.disabled && "opacity-50"
+        )} />
+        <span className={cn(
+          "truncate",
+          item.disabled && "opacity-50"
+        )}>
+          {item.name}
+        </span>
+        {item.comingSoon && item.disabled && (
+          <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800">
+            Coming Soon
+          </span>
+        )}
+        {item.badge && !item.disabled && (
           <span className={cn(
             'ml-2 px-2 py-0.5 text-xs rounded-full',
-            typeof item.badge === 'string' 
+            typeof item.badge === 'string'
               ? 'bg-secondary text-secondary-foreground'
               : 'bg-destructive text-destructive-foreground'
           )}>
@@ -230,7 +268,7 @@ function NavigationLink({
           </span>
         )}
       </div>
-      {hasChildren && (
+      {hasChildren && !item.disabled && (
         <div className="ml-auto">
           {isExpanded ? (
             <ChevronDownIcon className="h-4 w-4" />
@@ -243,11 +281,24 @@ function NavigationLink({
   );
 
   const className = cn(
-    'group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors w-full',
-    isActive
-      ? 'bg-primary text-primary-foreground'
-      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+    'group flex items-center rounded-md px-3 py-2 text-sm font-medium w-full',
+    item.disabled
+      ? 'cursor-not-allowed text-muted-foreground/50 opacity-50'
+      : cn(
+          'transition-colors',
+          isActive
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+        )
   );
+
+  if (item.disabled) {
+    return (
+      <div className={className}>
+        {content}
+      </div>
+    );
+  }
 
   if (hasChildren) {
     return (

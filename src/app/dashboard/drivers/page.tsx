@@ -12,14 +12,17 @@ import { DriverSearchBar } from '@/components/ui/SearchBar';
 import { StatusFilter, DistrictFilter, FilterDropdown } from '@/components/ui/FilterDropdown';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { 
-  TruckIcon, 
-  FunnelIcon, 
+import { Input } from '@/components/ui/input';
+import {
+  TruckIcon,
+  FunnelIcon,
   ArrowDownTrayIcon,
   EyeIcon,
   DocumentCheckIcon,
   ClockIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
 } from '@heroicons/react/24/outline';
 import { type Driver, type DriverListParams } from '@/lib/api/drivers';
 import { useDrivers, useDriverStats, useExportDrivers } from '@/hooks/api/useDriverData';
@@ -33,6 +36,11 @@ interface DriverFilters {
   vehicleType: string[];
   licenseStatus: string[];
   verificationStatus: string[];
+  // Advanced filters
+  minRating?: number;
+  maxRating?: number;
+  minRides?: number;
+  maxRides?: number;
 }
 
 const VEHICLE_TYPES = [
@@ -74,6 +82,7 @@ export default function DriversPage() {
 
   const [filters, setFilters] = useState<DriverFilters>(getInitialFilters());
   const [currentPage, setCurrentPage] = useState(1);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Update filters when URL parameters change
   useEffect(() => {
@@ -99,8 +108,24 @@ export default function DriversPage() {
   const { data: stats } = useDriverStats();
   const exportMutation = useExportDrivers();
 
-  // Extract data from React Query response
-  const drivers = driverData?.data || [];
+  // Extract data from React Query response and apply client-side advanced filtering
+  const rawDrivers = driverData?.data || [];
+  const drivers = rawDrivers.filter(driver => {
+    // Apply advanced filters client-side
+    if (filters.minRating && driver.performance?.averageRating && driver.performance.averageRating < filters.minRating) {
+      return false;
+    }
+    if (filters.maxRating && driver.performance?.averageRating && driver.performance.averageRating > filters.maxRating) {
+      return false;
+    }
+    if (filters.minRides && driver.performance?.totalRides && driver.performance.totalRides < filters.minRides) {
+      return false;
+    }
+    if (filters.maxRides && driver.performance?.totalRides && driver.performance.totalRides > filters.maxRides) {
+      return false;
+    }
+    return true;
+  });
   const pagination = driverData?.pagination || {
     current_page: 1,
     per_page: 50,
@@ -226,9 +251,17 @@ export default function DriversPage() {
         <DocumentCheckIcon className="h-4 w-4 mr-2" />
         Review Documents
       </Button>
-      <Button variant="outline">
+      <Button
+        variant="outline"
+        onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+      >
         <FunnelIcon className="h-4 w-4 mr-2" />
         Advanced Filters
+        {showAdvancedFilters ? (
+          <ChevronUpIcon className="h-4 w-4 ml-2" />
+        ) : (
+          <ChevronDownIcon className="h-4 w-4 ml-2" />
+        )}
       </Button>
     </div>
   );
@@ -255,6 +288,108 @@ export default function DriversPage() {
       filterBar={filterBar}
       actions={actions}
     >
+      {/* Advanced Filters Section */}
+      {showAdvancedFilters && (
+        <Card className="p-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Minimum Rating</label>
+              <Input
+                type="number"
+                placeholder="1.0"
+                min="1"
+                max="5"
+                step="0.1"
+                value={filters.minRating || ''}
+                onChange={(e) => {
+                  setFilters(prev => ({
+                    ...prev,
+                    minRating: e.target.value ? parseFloat(e.target.value) : undefined
+                  }));
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Maximum Rating</label>
+              <Input
+                type="number"
+                placeholder="5.0"
+                min="1"
+                max="5"
+                step="0.1"
+                value={filters.maxRating || ''}
+                onChange={(e) => {
+                  setFilters(prev => ({
+                    ...prev,
+                    maxRating: e.target.value ? parseFloat(e.target.value) : undefined
+                  }));
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Minimum Rides</label>
+              <Input
+                type="number"
+                placeholder="0"
+                min="0"
+                value={filters.minRides || ''}
+                onChange={(e) => {
+                  setFilters(prev => ({
+                    ...prev,
+                    minRides: e.target.value ? parseInt(e.target.value) : undefined
+                  }));
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Maximum Rides</label>
+              <Input
+                type="number"
+                placeholder="1000"
+                min="0"
+                value={filters.maxRides || ''}
+                onChange={(e) => {
+                  setFilters(prev => ({
+                    ...prev,
+                    maxRides: e.target.value ? parseInt(e.target.value) : undefined
+                  }));
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Clear Advanced Filters */}
+          <div className="mt-4 pt-4 border-t border-border flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">
+              {Object.entries(filters).filter(([key, value]) =>
+                ['minRating', 'maxRating', 'minRides', 'maxRides'].includes(key) &&
+                value !== undefined && value !== ''
+              ).length} advanced filter(s) active
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setFilters(prev => ({
+                ...prev,
+                minRating: undefined,
+                maxRating: undefined,
+                minRides: undefined,
+                maxRides: undefined,
+              }))}
+            >
+              Clear Advanced Filters
+            </Button>
+          </div>
+        </Card>
+      )}
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card className="p-4">

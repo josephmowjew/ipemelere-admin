@@ -20,6 +20,8 @@ export interface NavigationItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string | number;
+  disabled?: boolean;
+  comingSoon?: boolean;
   children?: Omit<NavigationItem, 'icon' | 'children'>[];
 }
 
@@ -35,6 +37,8 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     name: 'Analytics',
     href: '/dashboard/analytics',
     icon: ChartBarIcon,
+    disabled: true,
+    comingSoon: true,
   },
   {
     id: 'passengers',
@@ -63,6 +67,8 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     name: 'Rides',
     href: '/dashboard/rides',
     icon: MapIcon,
+    disabled: true,
+    comingSoon: true,
     children: [
       { id: 'rides-active', name: 'Active Rides', href: '/dashboard/rides/active' },
       { id: 'rides-history', name: 'Ride History', href: '/dashboard/rides/history' },
@@ -86,6 +92,8 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     name: 'Notifications',
     href: '/dashboard/notifications',
     icon: BellIcon,
+    disabled: true,
+    comingSoon: true,
     children: [
       { id: 'notifications-compose', name: 'Compose', href: '/dashboard/notifications/compose' },
       { id: 'notifications-templates', name: 'Templates', href: '/dashboard/notifications/templates' },
@@ -97,6 +105,8 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     name: 'Settings',
     href: '/dashboard/settings',
     icon: CogIcon,
+    disabled: true,
+    comingSoon: true,
     children: [
       { id: 'settings-platform', name: 'Platform', href: '/dashboard/settings/platform' },
       { id: 'settings-admins', name: 'Admin Users', href: '/dashboard/settings/admins' },
