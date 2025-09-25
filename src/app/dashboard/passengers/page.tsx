@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ListPageLayout } from '@/components/layout/DashboardLayout';
 import { PassengerSearchBar } from '@/components/ui/SearchBar';
@@ -31,12 +31,12 @@ interface PassengerFilters {
   verificationStatus: string[];
 }
 
-export default function PassengersPage() {
+function PassengersPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   // Initialize filters from URL parameters
-  const getInitialFilters = (): PassengerFilters => {
+  const getInitialFilters = useCallback((): PassengerFilters => {
     const urlStatus = searchParams.get('status');
     const urlDistrict = searchParams.get('district');
     const urlVerification = searchParams.get('verificationStatus');
@@ -48,7 +48,7 @@ export default function PassengersPage() {
       district: urlDistrict ? [urlDistrict] : [],
       verificationStatus: urlVerification ? [urlVerification] : []
     };
-  };
+  }, [searchParams]);
 
   const [filters, setFilters] = useState<PassengerFilters>(getInitialFilters());
   const [currentPage, setCurrentPage] = useState(1);
@@ -58,7 +58,7 @@ export default function PassengersPage() {
     const newFilters = getInitialFilters();
     setFilters(newFilters);
     setCurrentPage(1);
-  }, [searchParams]);
+  }, [getInitialFilters]);
 
   // Build query parameters from filters
   const queryParams: PassengerListParams = {
@@ -251,5 +251,13 @@ export default function PassengersPage() {
         onPageChange={handlePageChange}
       />
     </ListPageLayout>
+  );
+}
+
+export default function PassengersPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PassengersPageContent />
+    </Suspense>
   );
 }

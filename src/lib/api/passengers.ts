@@ -14,7 +14,6 @@ import type {
   PassengerRide,
   PassengerStats,
   PassengerExportParams,
-  PassengerApiResponse,
   PaginationMeta
 } from '@/types/passenger';
 

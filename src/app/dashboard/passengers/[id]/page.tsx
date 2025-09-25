@@ -30,7 +30,10 @@ import {
 } from '@heroicons/react/24/outline';
 import { usePassengerDetails, useUpdatePassengerStatus, useUpdatePassenger } from '@/hooks/api/usePassengerData';
 import { usePassengerDocumentManagement, useUploadNationalId } from '@/hooks/api/useDocumentData';
-import { documentApi, type Document } from '@/lib/api/documents';
+import { documentApi, type Document, type DocumentStatus } from '@/lib/api/documents';
+
+// Type for document overall status including no_documents
+type DocumentOverallStatus = DocumentStatus | 'no_documents';
 import type { Passenger, PassengerFormData } from '@/types/passenger';
 import { useNotificationActions } from '@/contexts/NotificationContext';
 import { cn } from '@/lib/utils';
@@ -217,7 +220,7 @@ export default function PassengerDetailPage() {
               errorMessage = err.message;
             } else if (typeof err === 'object' && err !== null) {
               // Handle API error response
-              const apiError = err as any;
+              const apiError = err as { response?: { data?: { message?: string } }; message?: string };
               if (apiError.response?.data?.message) {
                 errorMessage = apiError.response.data.message;
               } else if (apiError.message) {
@@ -372,7 +375,7 @@ export default function PassengerDetailPage() {
             ) : (
               <span className={cn(
                 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
-                documentApi.getStatusColorClass(documentOverallStatus as any)
+                documentApi.getStatusColorClass(documentOverallStatus as DocumentOverallStatus)
               )}>
                 {documentOverallStatus.charAt(0).toUpperCase() + documentOverallStatus.slice(1).replace('_', ' ')}
               </span>
@@ -569,7 +572,7 @@ export default function PassengerDetailPage() {
               ) : (
                 <span className={cn(
                   'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-                  documentApi.getStatusColorClass(documentOverallStatus as any)
+                  documentApi.getStatusColorClass(documentOverallStatus as DocumentOverallStatus)
                 )}>
                   {documentOverallStatus === 'verified' && <CheckCircleIcon className="h-3 w-3 mr-1" />}
                   {documentOverallStatus === 'pending' && <ClockIcon className="h-3 w-3 mr-1" />}

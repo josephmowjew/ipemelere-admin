@@ -121,7 +121,7 @@ export function DocumentUploadArea({
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
-    } catch (err) {
+    } catch {
       // Error is handled by parent component
     }
   }, [selectedFile, notes, onFileSelect]);

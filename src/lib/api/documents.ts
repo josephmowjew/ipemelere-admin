@@ -165,10 +165,13 @@ export class DocumentService {
         }
       );
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to upload national ID:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
+      if (error && typeof error === 'object' && 'response' in error) {
+        const apiError = error as { response?: { data?: unknown; status?: number } };
+        console.error('Error response:', apiError.response?.data);
+        console.error('Error status:', apiError.response?.status);
+      }
 
       // Re-throw the original error to preserve the response data
       throw error;
@@ -235,14 +238,15 @@ export class DocumentService {
   /**
    * Helper function to get status color class
    */
-  static getStatusColorClass(status: DocumentStatus): string {
-    const colorClasses: Record<DocumentStatus, string> = {
+  static getStatusColorClass(status: DocumentStatus | 'no_documents'): string {
+    const colorClasses: Record<DocumentStatus | 'no_documents', string> = {
       pending: 'bg-yellow-100 text-yellow-800',
       under_review: 'bg-blue-100 text-blue-800',
       verified: 'bg-green-100 text-green-800',
       rejected: 'bg-red-100 text-red-800',
       expired: 'bg-gray-100 text-gray-800',
       resubmission_required: 'bg-orange-100 text-orange-800',
+      no_documents: 'bg-gray-100 text-gray-600',
     };
     return colorClasses[status] || 'bg-gray-100 text-gray-800';
   }

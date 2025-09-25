@@ -46,6 +46,10 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
     return `notification-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   }, []);
 
+  const removeNotification = useCallback((id: string) => {
+    setNotifications(prev => prev.filter(notification => notification.id !== id));
+  }, []);
+
   const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
     const id = generateId();
     const newNotification: Notification = {
@@ -64,11 +68,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
     }
 
     return id;
-  }, [generateId]);
-
-  const removeNotification = useCallback((id: string) => {
-    setNotifications(prev => prev.filter(notification => notification.id !== id));
-  }, []);
+  }, [generateId, removeNotification]);
 
   const clearAll = useCallback(() => {
     setNotifications([]);

@@ -4,7 +4,8 @@
  */
 
 import { api } from './client';
-import { ApiResponse, PaginationParams, PaginationResponse, DocumentStatus, VerificationStatus, RideRecord, ActivityRecord, DriverAnalytics } from './types';
+import { ApiResponse, PaginationParams, PaginationResponse, VerificationStatus, RideRecord, ActivityRecord, DriverAnalytics } from './types';
+import { type DocumentStatus } from './documents';
 
 // Types for Driver Management
 export interface Driver {
@@ -53,7 +54,7 @@ export interface Driver {
   emailVerificationStatus?: VerificationStatus;
   phoneVerificationStatus?: VerificationStatus;
   licenseExpiryDate?: string;
-  licenseVerificationStatus?: DocumentStatus;
+  licenseVerificationStatus?: VerificationStatus;
   vehicle?: {
     make: string;
     model: string;
@@ -137,27 +138,58 @@ export interface DriverStatusChangeData {
 }
 
 // Transform backend driver response to frontend format
-const transformDriverResponse = (rawDriver: any): Driver => {
+const transformDriverResponse = (rawDriver: Record<string, unknown>): Driver => {
+  // Type assertion to access properties safely
+  const driver = rawDriver as {
+    phone?: string;
+    phoneNumber?: string;
+    rating?: string;
+    totalRides?: number;
+    verificationStatus?: VerificationStatus;
+    documentVerificationStatus?: VerificationStatus;
+    city?: string;
+    address?: string;
+    nationalId?: string;
+    emergencyContactName?: string;
+    emergencyContactPhone?: string;
+    emergencyContactRelationship?: string;
+    lastActivity?: string;
+    updatedAt?: string;
+    vehicleDetails?: {
+      make?: string;
+      model?: string;
+      year?: number;
+      plateNumber?: string;
+      color?: string;
+      type?: string;
+      insuranceExpiryDate?: string;
+      registrationExpiryDate?: string;
+      inspectionExpiryDate?: string;
+    };
+    vehicle?: unknown;
+    [key: string]: unknown;
+  };
   return {
     ...rawDriver,
+    phone: driver.phone || driver.phoneNumber || '',
     // Map backend field names to frontend expectations
-    phoneNumber: rawDriver.phone || rawDriver.phoneNumber,
-    vehicle: rawDriver.vehicleDetails ? {
-      make: rawDriver.vehicleDetails.make,
-      model: rawDriver.vehicleDetails.model,
-      year: rawDriver.vehicleDetails.year,
-      plateNumber: rawDriver.vehicleDetails.plateNumber,
-      color: rawDriver.vehicleDetails.color || '',
-      type: rawDriver.vehicleDetails.type || 'sedan',
-      insuranceExpiryDate: rawDriver.vehicleDetails.insuranceExpiryDate || '',
-      registrationExpiryDate: rawDriver.vehicleDetails.registrationExpiryDate || '',
-      inspectionExpiryDate: rawDriver.vehicleDetails.inspectionExpiryDate || '',
+    phoneNumber: driver.phone || driver.phoneNumber,
+    vehicle: driver.vehicleDetails ? {
+      make: driver.vehicleDetails.make || '',
+      model: driver.vehicleDetails.model || '',
+      year: driver.vehicleDetails.year || 0,
+      plateNumber: driver.vehicleDetails.plateNumber || '',
+      color: driver.vehicleDetails.color || '',
+      type: (driver.vehicleDetails.type as 'sedan' | 'hatchback' | 'suv' | 'minibus') || 'sedan',
+      insuranceExpiryDate: driver.vehicleDetails.insuranceExpiryDate || '',
+      registrationExpiryDate: driver.vehicleDetails.registrationExpiryDate || '',
+      inspectionExpiryDate: driver.vehicleDetails.inspectionExpiryDate || '',
     } : undefined,
     // Create performance object from individual fields (these are basic metrics available in driver response)
     performance: {
-      totalRides: rawDriver.totalRides || 0,
+      totalRides: driver.totalRides || 0,
       totalEarnings: 0, // Not provided by backend at driver level
-      averageRating: parseFloat(rawDriver.rating || '0'),
+      averageRating: parseFloat(String(driver.rating || '0')),
       totalRatings: 0, // Not provided by backend
       // These require separate analytics call - will be populated by UI from analytics data
       completionRate: 0,
@@ -165,20 +197,20 @@ const transformDriverResponse = (rawDriver: any): Driver => {
       cancellationRate: 0,
     },
     // Map verification status fields (use backend values directly)
-    emailVerificationStatus: rawDriver.verificationStatus,
-    phoneVerificationStatus: rawDriver.verificationStatus,
-    licenseVerificationStatus: rawDriver.documentVerificationStatus,
+    emailVerificationStatus: driver.verificationStatus,
+    phoneVerificationStatus: driver.verificationStatus,
+    licenseVerificationStatus: driver.documentVerificationStatus,
     // Provide default values for missing fields
-    city: rawDriver.city || '',
-    address: rawDriver.address || '',
-    nationalId: rawDriver.nationalId || '',
+    city: driver.city || '',
+    address: driver.address || '',
+    nationalId: driver.nationalId || '',
     emergencyContact: {
-      name: rawDriver.emergencyContactName || '',
-      phone: rawDriver.emergencyContactPhone || '',
-      relationship: rawDriver.emergencyContactRelationship || '',
+      name: driver.emergencyContactName || '',
+      phone: driver.emergencyContactPhone || '',
+      relationship: driver.emergencyContactRelationship || '',
     },
-    lastActivity: rawDriver.lastActivity || rawDriver.updatedAt,
-  };
+    lastActivity: driver.lastActivity || driver.updatedAt,
+  } as Driver;
 };
 
 // Admin API functions for driver management
@@ -198,14 +230,14 @@ export const driverAPI = {
     if (params.vehicleType) searchParams.set('vehicleType', params.vehicleType);
     if (params.verificationStatus) searchParams.set('verificationStatus', params.verificationStatus);
 
-    const response = await api.get<PaginationResponse<any>>(
+    const response = await api.get<PaginationResponse<unknown>>(
       `/admin/drivers?${searchParams.toString()}`
     );
 
     // Transform each driver in the response
     const transformedData = {
       ...response.data,
-      data: response.data.data.map((driver: any) => transformDriverResponse(driver))
+      data: response.data.data.map((driver: unknown) => transformDriverResponse(driver as Record<string, unknown>))
     };
 
     return transformedData;
@@ -217,10 +249,10 @@ export const driverAPI = {
   async getDriver(id: number): Promise<Driver> {
     const response = await api.get(`/admin/drivers/${id}`);
     // Handle both wrapped and direct response formats
-    const rawDriver = response.data.data || response.data;
+    const driver = response.data.data || response.data;
 
     // Transform backend response to frontend format
-    return transformDriverResponse(rawDriver);
+    return transformDriverResponse(driver);
   },
 
 
@@ -233,8 +265,8 @@ export const driverAPI = {
       data
     );
     // Handle both wrapped and direct response formats and transform
-    const rawDriver = response.data.data || response.data;
-    return transformDriverResponse(rawDriver);
+    const driver = response.data.data || response.data;
+    return transformDriverResponse(driver);
   },
 
   /**
@@ -246,8 +278,8 @@ export const driverAPI = {
       data
     );
     // Handle both wrapped and direct response formats and transform
-    const rawDriver = response.data.data || response.data;
-    return transformDriverResponse(rawDriver);
+    const driver = response.data.data || response.data;
+    return transformDriverResponse(driver);
   },
 
   /**
@@ -279,11 +311,26 @@ export const driverAPI = {
     const rawActivity = response.data.data || response.data || [];
 
     // Transform backend activity format to frontend format
-    return rawActivity.map((activity: any) => ({
-      ...activity,
-      type: activity.activityType || activity.type, // Map activityType to type
-      userId: activity.userId || id, // Ensure userId is present
-    }));
+    return (rawActivity as unknown as Record<string, unknown>[]).map((activity: Record<string, unknown>) => {
+      const act = activity as {
+        id?: string;
+        activityType?: string;
+        type?: string;
+        userId?: number;
+        description?: string;
+        timestamp?: string;
+        metadata?: Record<string, unknown>;
+        [key: string]: unknown;
+      };
+      return {
+        id: act.id || `activity-${Date.now()}-${Math.random()}`,
+        userId: act.userId || id,
+        type: (act.activityType || act.type || 'status_change') as ActivityRecord['type'],
+        description: act.description || 'Driver activity',
+        timestamp: act.timestamp || new Date().toISOString(),
+        metadata: act.metadata as Record<string, string | number | boolean> | undefined,
+      };
+    });
   },
 
   /**
@@ -304,22 +351,39 @@ export const driverAPI = {
    * Get driver performance analytics
    */
   async getDriverAnalytics(id: number): Promise<DriverAnalytics> {
-    const response = await api.get<ApiResponse<any>>(`/admin/drivers/${id}/analytics`);
+    const response = await api.get<ApiResponse<unknown>>(`/admin/drivers/${id}/analytics`);
     // Handle both wrapped and direct response formats
-    const rawAnalytics = response.data.data || response.data;
+    const rawAnalytics = (response.data.data || response.data) as {
+      totalRides?: number;
+      totalEarnings?: number;
+      averageRating?: string | number;
+      totalHours?: string | number;
+      completionRate?: number;
+      cancellationRate?: string | number;
+      performanceMetrics?: {
+        onTime?: number;
+        customerSatisfaction?: number;
+        efficiency?: number;
+        courteous?: number;
+        vehicleCondition?: number;
+      };
+      averageRideDistance?: number;
+      averageRideDuration?: number;
+      [key: string]: unknown;
+    };
 
     // Transform backend analytics format to frontend format
     return {
       overview: {
         totalRides: rawAnalytics.totalRides || 0,
         totalEarnings: rawAnalytics.totalEarnings || 0,
-        averageRating: parseFloat(rawAnalytics.averageRating) || 0,
-        hoursOnline: parseFloat(rawAnalytics.totalHours) || 0,
+        averageRating: parseFloat(String(rawAnalytics.averageRating || '0')) || 0,
+        hoursOnline: parseFloat(String(rawAnalytics.totalHours || '0')) || 0,
       },
       performance: {
         acceptanceRate: 0, // Not provided by backend
         completionRate: rawAnalytics.completionRate || 0,
-        cancellationRate: parseFloat(rawAnalytics.cancellationRate) || 0,
+        cancellationRate: parseFloat(String(rawAnalytics.cancellationRate || '0')) || 0,
         averageResponseTime: 0, // Not provided by backend
         // New metrics from backend
         onTimeRate: rawAnalytics.performanceMetrics?.onTime || 0,
@@ -330,7 +394,7 @@ export const driverAPI = {
       rideMetrics: {
         averageDistance: rawAnalytics.averageRideDistance || 0,
         averageDuration: rawAnalytics.averageRideDuration || 0,
-        totalHours: parseFloat(rawAnalytics.totalHours) || 0,
+        totalHours: parseFloat(String(rawAnalytics.totalHours || '0')) || 0,
       },
       earnings: {
         thisWeek: 0, // Not provided by backend

@@ -85,9 +85,9 @@ export const useDriverActivity = (id: number) => {
     queryFn: async () => {
       try {
         return await driverAPI.getDriverActivity(id);
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Return empty array for 404 or other errors
-        console.warn(`Driver activity not found for ID ${id}:`, error?.message);
+        console.warn(`Driver activity not found for ID ${id}:`, error instanceof Error ? error.message : error);
         return [];
       }
     },
@@ -131,9 +131,9 @@ export const useDriverDocuments = (id: number) => {
     queryFn: async () => {
       try {
         return await driverAPI.getDriverDocuments(id);
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Return empty array for 404 or other errors
-        console.warn(`Driver documents not found for ID ${id}:`, error?.message);
+        console.warn(`Driver documents not found for ID ${id}:`, error instanceof Error ? error.message : error);
         return [];
       }
     },
@@ -273,7 +273,7 @@ export const useExportDrivers = () => {
     mutationFn: (params: Omit<DriverListParams, 'page' | 'limit'> = {}): Promise<Blob> => {
       return driverAPI.exportDrivers(params);
     },
-    onSuccess: (blob, _params) => {
+    onSuccess: (blob) => {
       // Create download link
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');

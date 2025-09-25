@@ -22,7 +22,6 @@ import {
 import { usePendingDriverDocuments } from '@/hooks/api/useDriverData';
 import { useReviewDriverDocument } from '@/hooks/api/useDriverData';
 import { DriverDocumentRejectDialog } from '@/components/dialogs/DriverDocumentRejectDialog';
-import { type Driver } from '@/lib/api/drivers';
 
 const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   'national_id': 'National ID',
@@ -64,7 +63,7 @@ export default function PendingDocumentsPage() {
     await reviewMutation.mutateAsync({
       driverId,
       documentId,
-      data: { status: 'approved' }
+      data: { status: 'verified' }
     });
   };
 

@@ -128,7 +128,7 @@ export function useViewDocument() {
   return useMutation({
     mutationFn: ({ passengerId, documentId }: { passengerId: number; documentId: number }) =>
       documentApi.viewDocument(passengerId, documentId),
-    onSuccess: (blob, { documentId }) => {
+    onSuccess: (blob) => {
       // Create blob URL and open in new tab
       const url = window.URL.createObjectURL(blob);
       const newWindow = window.open(url, '_blank');

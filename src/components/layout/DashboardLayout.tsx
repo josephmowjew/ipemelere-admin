@@ -5,7 +5,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLayout } from '@/contexts/LayoutContext';
 import { Sidebar } from './Sidebar';
@@ -48,13 +48,15 @@ export function DashboardLayout({
   return (
     <div className="min-h-screen bg-background">
       {/* Sidebar */}
-      <Sidebar
-        navigation={NAVIGATION_ITEMS}
-        isOpen={sidebarOpen}
-        onToggle={toggleSidebar}
-        isCollapsed={sidebarCollapsed}
-        onCollapse={collapseSidebar}
-      />
+      <Suspense fallback={<div className="w-64" />}>
+        <Sidebar
+          navigation={NAVIGATION_ITEMS}
+          isOpen={sidebarOpen}
+          onToggle={toggleSidebar}
+          isCollapsed={sidebarCollapsed}
+          onCollapse={collapseSidebar}
+        />
+      </Suspense>
 
       {/* Mobile sidebar overlay */}
       {isMobile && sidebarOpen && (

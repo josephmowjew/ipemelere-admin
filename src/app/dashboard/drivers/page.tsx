@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ListPageLayout } from '@/components/layout/DashboardLayout';
 import { DriverSearchBar } from '@/components/ui/SearchBar';
@@ -57,12 +57,12 @@ const DOCUMENT_STATUSES = [
   { value: 'expired', label: 'Expired' }
 ];
 
-export default function DriversPage() {
+function DriversPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   // Initialize filters from URL parameters
-  const getInitialFilters = (): DriverFilters => {
+  const getInitialFilters = useCallback((): DriverFilters => {
     const urlStatus = searchParams.get('status');
     const urlDistrict = searchParams.get('district');
     const urlVehicleType = searchParams.get('vehicleType');
@@ -78,7 +78,7 @@ export default function DriversPage() {
       licenseStatus: urlLicenseStatus ? [urlLicenseStatus] : [],
       verificationStatus: urlVerificationStatus ? [urlVerificationStatus] : []
     };
-  };
+  }, [searchParams]);
 
   const [filters, setFilters] = useState<DriverFilters>(getInitialFilters());
   const [currentPage, setCurrentPage] = useState(1);
@@ -89,7 +89,7 @@ export default function DriversPage() {
     const newFilters = getInitialFilters();
     setFilters(newFilters);
     setCurrentPage(1);
-  }, [searchParams]);
+  }, [getInitialFilters]);
 
   // Build query parameters from filters
   const queryParams: DriverListParams = {
@@ -517,10 +517,10 @@ export default function DriversPage() {
                         </p>
                         <span className={cn(
                           'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
-                          driver.licenseVerificationStatus === 'approved' && 'bg-green-100 text-green-800',
+                          driver.licenseVerificationStatus === 'verified' && 'bg-green-100 text-green-800',
                           driver.licenseVerificationStatus === 'pending' && 'bg-yellow-100 text-yellow-800',
                           driver.licenseVerificationStatus === 'rejected' && 'bg-red-100 text-red-800',
-                          driver.licenseVerificationStatus === 'expired' && 'bg-gray-100 text-gray-800'
+                          driver.licenseVerificationStatus === 'rejected' && 'bg-gray-100 text-gray-800'
                         )}>
                           {driver.licenseVerificationStatus}
                         </span>
@@ -634,5 +634,13 @@ export default function DriversPage() {
         )}
       </Card>
     </ListPageLayout>
+  );
+}
+
+export default function DriversPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DriversPageContent />
+    </Suspense>
   );
 }

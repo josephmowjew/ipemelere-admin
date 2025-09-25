@@ -366,7 +366,7 @@ export default function LandingPage() {
                 <span className="bg-gradient-to-r from-green-600 to-yellow-600 bg-clip-text text-transparent"> Vehicle Fleet</span>
               </h2>
               <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
-                Quality vehicles maintained to the highest standards - we'll match you with the best available option for your journey
+                Quality vehicles maintained to the highest standards - we&apos;ll match you with the best available option for your journey
               </p>
             </div>
             
