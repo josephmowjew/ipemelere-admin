@@ -8,7 +8,7 @@ const nextConfig = {
   async rewrites() {
     // Allow overriding the backend origin via env.
     // Example: API_PROXY_TARGET=http://localhost:3002
-    const target = process.env.API_PROXY_TARGET || 'http://localhost:3001';
+    const target = process.env.API_PROXY_TARGET || 'https://www.ganyuipemelere.com ';
     return [
       {
         source: '/api/v1/:path*',
