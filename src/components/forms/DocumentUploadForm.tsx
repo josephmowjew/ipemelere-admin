@@ -18,15 +18,15 @@ import {
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
-import { driverAPI, type DriverDocument } from '@/lib/api/drivers';
+import { type DriverDocument } from '@/lib/api/drivers';
+import { useUploadDriverDocument } from '@/hooks/api/useDriverData';
 
 type DocumentType = 'national-id' | 'driver-license' | 'profile-picture' | 'vehicle-registration' | 'vehicle-insurance';
 
 interface DocumentUploadFormProps {
   driverId: number;
-  onUploadSuccess: (document: unknown) => void;
+  onUploadSuccess: (document: DriverDocument) => void;
   onCancel: () => void;
-  loading?: boolean;
   existingDocuments?: DriverDocument[];
 }
 
@@ -42,7 +42,6 @@ export function DocumentUploadForm({
   driverId,
   onUploadSuccess,
   onCancel,
-  loading = false,
   existingDocuments = []
 }: DocumentUploadFormProps) {
   const [documentType, setDocumentType] = useState<DocumentType>('national-id');
@@ -50,6 +49,16 @@ export function DocumentUploadForm({
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+
+  // Use upload mutation hook for proper loading state management
+  const uploadMutation = useUploadDriverDocument();
+
+  // Clear errors when mutation status changes
+  React.useEffect(() => {
+    if (uploadMutation.isPending) {
+      setError(null);
+    }
+  }, [uploadMutation.isPending]);
 
   // Filter out document types that already exist
   const existingDocTypes = new Set(
@@ -131,8 +140,17 @@ export function DocumentUploadForm({
       return;
     }
 
+    // Clear any previous errors
+    setError(null);
+
     try {
-      const result = await driverAPI.uploadDocument(driverId, documentType, selectedFile, notes);
+      const result = await uploadMutation.mutateAsync({
+        driverId,
+        documentType,
+        file: selectedFile,
+        notes: notes || undefined
+      });
+
       console.log('Upload successful:', result);
       onUploadSuccess(result);
     } catch (err: unknown) {
@@ -196,7 +214,7 @@ export function DocumentUploadForm({
             id="documentType"
             value={documentType}
             onChange={(e) => setDocumentType(e.target.value as DocumentType)}
-            disabled={loading}
+            disabled={uploadMutation.isPending}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
           >
             {availableDocumentTypes.map((type) => (
@@ -229,7 +247,8 @@ export function DocumentUploadForm({
             className={cn(
               "relative border-2 border-dashed rounded-lg p-8 text-center transition-colors",
               dragOver ? "border-primary bg-primary/5" : "border-border",
-              selectedFile ? "border-green-300 bg-green-50" : ""
+              selectedFile ? "border-green-300 bg-green-50" : "",
+              uploadMutation.isPending ? "border-blue-300 bg-blue-50" : ""
             )}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
@@ -237,22 +256,40 @@ export function DocumentUploadForm({
           >
             {selectedFile ? (
               <div className="space-y-4">
-                <CheckCircleIcon className="h-12 w-12 text-green-600 mx-auto" />
-                <div>
-                  <p className="font-medium text-green-900">{selectedFile.name}</p>
-                  <p className="text-sm text-green-700">
-                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={removeFile}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <XMarkIcon className="h-4 w-4 mr-2" />
-                  Remove File
-                </Button>
+                {uploadMutation.isPending ? (
+                  <>
+                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mx-auto"></div>
+                    <div>
+                      <p className="font-medium text-blue-900">Uploading {selectedFile.name}</p>
+                      <p className="text-sm text-blue-700">
+                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                      <div className="mt-2 w-full bg-blue-100 rounded-full h-2">
+                        <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{ width: '100%' }}></div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircleIcon className="h-12 w-12 text-green-600 mx-auto" />
+                    <div>
+                      <p className="font-medium text-green-900">{selectedFile.name}</p>
+                      <p className="text-sm text-green-700">
+                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={removeFile}
+                      className="text-red-600 hover:text-red-700"
+                      disabled={uploadMutation.isPending}
+                    >
+                      <XMarkIcon className="h-4 w-4 mr-2" />
+                      Remove File
+                    </Button>
+                  </>
+                )}
               </div>
             ) : (
               <>
@@ -268,7 +305,7 @@ export function DocumentUploadForm({
                   onChange={handleFileChange}
                   accept={selectedDocType.formats.join(',')}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  disabled={loading}
+                  disabled={uploadMutation.isPending}
                 />
               </>
             )}
@@ -286,7 +323,7 @@ export function DocumentUploadForm({
             className="resize-none"
             rows={3}
             maxLength={500}
-            disabled={loading}
+            disabled={uploadMutation.isPending}
           />
           <p className="text-xs text-muted-foreground">
             {notes.length}/500 characters
@@ -294,10 +331,12 @@ export function DocumentUploadForm({
         </div>
 
         {/* Error Message */}
-        {error && (
+        {(error || uploadMutation.error) && (
           <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
             <ExclamationTriangleIcon className="h-5 w-5 text-red-600 mt-0.5" />
-            <p className="text-sm text-red-700">{error}</p>
+            <p className="text-sm text-red-700">
+              {error || (uploadMutation.error instanceof Error ? uploadMutation.error.message : 'Upload failed')}
+            </p>
           </div>
         )}
 
@@ -307,15 +346,23 @@ export function DocumentUploadForm({
             type="button"
             variant="outline"
             onClick={onCancel}
-            disabled={loading}
+            disabled={uploadMutation.isPending}
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            disabled={loading || !selectedFile}
+            disabled={uploadMutation.isPending || !selectedFile}
+            className="min-w-[140px]"
           >
-            {loading ? 'Uploading...' : 'Upload Document'}
+            {uploadMutation.isPending ? (
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                Uploading...
+              </div>
+            ) : (
+              'Upload Document'
+            )}
           </Button>
         </div>
       </form>

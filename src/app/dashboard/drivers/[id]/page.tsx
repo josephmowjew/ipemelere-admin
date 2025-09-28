@@ -33,7 +33,7 @@ import {
   CalendarIcon,
   IdentificationIcon
 } from '@heroicons/react/24/outline';
-import { useDriverDetails, useUpdateDriverStatus, useUpdateDriver } from '@/hooks/api/useDriverData';
+import { useDriverDetails, useUpdateDriverStatus, useUpdateDriver, useApproveDriverDocument, useRejectDriverDocument, useDownloadDriverDocument } from '@/hooks/api/useDriverData';
 import { driverAPI, type Driver, type DriverDocument, DriverUpdateData, DriverStatusChangeData } from '@/lib/api/drivers';
 import { cn } from '@/lib/utils';
 
@@ -64,6 +64,9 @@ export default function DriverDetailPage() {
 
   const updateStatusMutation = useUpdateDriverStatus();
   const updateDriverMutation = useUpdateDriver();
+  const approveDocumentMutation = useApproveDriverDocument();
+  const rejectDocumentMutation = useRejectDriverDocument();
+  const downloadDocumentMutation = useDownloadDriverDocument();
 
   // Status change handler
   const handleStatusChange = (newStatus: Driver['status'], reason?: string) => {
@@ -125,9 +128,12 @@ export default function DriverDetailPage() {
     if (!driver) return;
 
     try {
-      await driverAPI.approveDriverDocument(driver.id, documentId, notes);
+      await approveDocumentMutation.mutateAsync({
+        driverId: driver.id,
+        documentId,
+        notes
+      });
       console.log('Document approved successfully');
-      refetchAll(); // Refresh to show updated document status
     } catch (err) {
       console.error('Error approving document:', err);
     }
@@ -137,9 +143,13 @@ export default function DriverDetailPage() {
     if (!driver || !rejectDialogDocument) return;
 
     try {
-      await driverAPI.rejectDriverDocument(driver.id, rejectDialogDocument.id, reason, notes);
+      await rejectDocumentMutation.mutateAsync({
+        driverId: driver.id,
+        documentId: rejectDialogDocument.id,
+        reason,
+        notes
+      });
       console.log('Document rejected successfully');
-      refetchAll(); // Refresh to show updated document status
       setRejectDialogDocument(null); // Close dialog
     } catch (err) {
       console.error('Error rejecting document:', err);
@@ -151,17 +161,11 @@ export default function DriverDetailPage() {
     if (!driver) return;
 
     try {
-      const blob = await driverAPI.downloadDriverDocument(driver.id, documentId);
-
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      await downloadDocumentMutation.mutateAsync({
+        driverId: driver.id,
+        documentId,
+        fileName
+      });
     } catch (err) {
       console.error('Error downloading document:', err);
     }
@@ -702,9 +706,20 @@ export default function DriverDetailPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleDocumentDownload(document.id, document.originalFileName)}
+                        disabled={downloadDocumentMutation.isPending}
+                        className="min-w-[110px]"
                       >
-                        <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
-                        Download
+                        {downloadDocumentMutation.isPending ? (
+                          <>
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2"></div>
+                            Downloading...
+                          </>
+                        ) : (
+                          <>
+                            <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+                            Download
+                          </>
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -713,17 +728,28 @@ export default function DriverDetailPage() {
                     <div className="flex items-center gap-2 pt-3 border-t border-border">
                       <Button
                         size="sm"
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-green-600 hover:bg-green-700 min-w-[100px]"
                         onClick={() => handleDocumentApprove(document.id, 'Document approved by admin')}
+                        disabled={approveDocumentMutation.isPending || rejectDocumentMutation.isPending}
                       >
-                        <CheckCircleIcon className="h-4 w-4 mr-2" />
-                        Approve
+                        {approveDocumentMutation.isPending ? (
+                          <>
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2"></div>
+                            Approving...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircleIcon className="h-4 w-4 mr-2" />
+                            Approve
+                          </>
+                        )}
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         className="text-red-600 border-red-200 hover:bg-red-50"
                         onClick={() => setRejectDialogDocument(document)}
+                        disabled={approveDocumentMutation.isPending || rejectDocumentMutation.isPending}
                       >
                         <XCircleIcon className="h-4 w-4 mr-2" />
                         Reject
@@ -877,7 +903,6 @@ export default function DriverDetailPage() {
                 refetchAll(); // Refresh the driver data to show new document
               }}
               onCancel={() => setIsUploadModalOpen(false)}
-              loading={false}
             />
           </div>
         </div>
@@ -889,7 +914,7 @@ export default function DriverDetailPage() {
         isOpen={!!rejectDialogDocument}
         onClose={() => setRejectDialogDocument(null)}
         onReject={handleDocumentReject}
-        isRejecting={false} // Could be tied to a mutation state if needed
+        isRejecting={rejectDocumentMutation.isPending}
       />
     </DetailPageLayout>
   );

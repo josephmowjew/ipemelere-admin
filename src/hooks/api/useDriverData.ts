@@ -267,6 +267,163 @@ export const useReviewDriverDocument = () => {
   });
 };
 
+// Mutation hook for approving driver documents
+export const useApproveDriverDocument = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      driverId,
+      documentId,
+      notes
+    }: {
+      driverId: number;
+      documentId: number;
+      notes?: string;
+    }): Promise<DriverDocument> => {
+      return driverAPI.approveDriverDocument(driverId, documentId, notes);
+    },
+    onSuccess: (_, { driverId }) => {
+      // Invalidate driver details to refetch with updated document
+      queryClient.invalidateQueries({
+        queryKey: driverQueryKeys.detail(driverId)
+      });
+
+      // Invalidate driver documents
+      queryClient.invalidateQueries({
+        queryKey: driverQueryKeys.documents(driverId)
+      });
+
+      // Invalidate pending documents list
+      queryClient.invalidateQueries({
+        queryKey: driverQueryKeys.pendingDocuments()
+      });
+
+      // Invalidate driver lists (status might change)
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.lists() });
+    },
+    onError: (error) => {
+      console.error('Failed to approve document:', error);
+    },
+  });
+};
+
+// Mutation hook for rejecting driver documents
+export const useRejectDriverDocument = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      driverId,
+      documentId,
+      reason,
+      notes
+    }: {
+      driverId: number;
+      documentId: number;
+      reason: string;
+      notes?: string;
+    }): Promise<DriverDocument> => {
+      return driverAPI.rejectDriverDocument(driverId, documentId, reason, notes);
+    },
+    onSuccess: (_, { driverId }) => {
+      // Invalidate driver details to refetch with updated document
+      queryClient.invalidateQueries({
+        queryKey: driverQueryKeys.detail(driverId)
+      });
+
+      // Invalidate driver documents
+      queryClient.invalidateQueries({
+        queryKey: driverQueryKeys.documents(driverId)
+      });
+
+      // Invalidate pending documents list
+      queryClient.invalidateQueries({
+        queryKey: driverQueryKeys.pendingDocuments()
+      });
+
+      // Invalidate driver lists (status might change)
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.lists() });
+    },
+    onError: (error) => {
+      console.error('Failed to reject document:', error);
+    },
+  });
+};
+
+// Mutation hook for downloading driver documents
+export const useDownloadDriverDocument = () => {
+  return useMutation({
+    mutationFn: async ({
+      driverId,
+      documentId,
+      fileName
+    }: {
+      driverId: number;
+      documentId: number;
+      fileName: string;
+    }): Promise<void> => {
+      const blob = await driverAPI.downloadDriverDocument(driverId, documentId);
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    },
+    onError: (error) => {
+      console.error('Failed to download document:', error);
+    },
+  });
+};
+
+// Mutation hook for uploading driver documents
+export const useUploadDriverDocument = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      driverId,
+      documentType,
+      file,
+      notes
+    }: {
+      driverId: number;
+      documentType: 'national-id' | 'driver-license' | 'profile-picture' | 'vehicle-registration' | 'vehicle-insurance';
+      file: File;
+      notes?: string;
+    }): Promise<DriverDocument> => {
+      return driverAPI.uploadDocument(driverId, documentType, file, notes);
+    },
+    onSuccess: (_, { driverId }) => {
+      // Invalidate driver details to refetch with updated document
+      queryClient.invalidateQueries({
+        queryKey: driverQueryKeys.detail(driverId)
+      });
+
+      // Invalidate driver documents
+      queryClient.invalidateQueries({
+        queryKey: driverQueryKeys.documents(driverId)
+      });
+
+      // Invalidate pending documents list
+      queryClient.invalidateQueries({
+        queryKey: driverQueryKeys.pendingDocuments()
+      });
+
+      // Invalidate driver lists (status might change)
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.lists() });
+    },
+    onError: (error) => {
+      console.error('Failed to upload document:', error);
+    },
+  });
+};
+
 // Hook for exporting driver data
 export const useExportDrivers = () => {
   return useMutation({
