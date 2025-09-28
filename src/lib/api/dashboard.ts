@@ -104,7 +104,7 @@ export class DashboardService {
    */
   static async getMetrics(): Promise<DashboardMetrics> {
     try {
-      const response = await api.get<APIDashboardMetrics>('/admin/dashboard/metrics');
+      const response = await api.get<APIDashboardMetrics>('/dashboard/metrics');
       return DashboardTransformer.transformMetrics(response.data);
     } catch (error) {
       console.error('Failed to fetch dashboard metrics:', error);
@@ -118,7 +118,7 @@ export class DashboardService {
    */
   static async getRecentActivity(limit: number = 10): Promise<ActivityItem[]> {
     try {
-      const response = await api.get<APIActivityItem[]>('/admin/dashboard/activity', {
+      const response = await api.get<APIActivityItem[]>('/dashboard/activity', {
         params: { limit },
       });
       return DashboardTransformer.transformActivity(response.data);
@@ -133,7 +133,7 @@ export class DashboardService {
    */
   static async getSystemStatus(): Promise<SystemStatus> {
     try {
-      const response = await api.get<APISystemStatus>('/admin/dashboard/system-status');
+      const response = await api.get<APISystemStatus>('/dashboard/system-status');
       return DashboardTransformer.transformSystemStatus(response.data);
     } catch (error) {
       console.error('Failed to fetch system status:', error);
@@ -146,7 +146,7 @@ export class DashboardService {
    */
   static async getRevenueChart(params?: DashboardQueryParams): Promise<RevenueData[]> {
     try {
-      const response = await api.get<APIRevenueData[]>('/admin/dashboard/revenue-chart', {
+      const response = await api.get<APIRevenueData[]>('/dashboard/revenue-chart', {
         params,
       });
       return DashboardTransformer.transformRevenueData(response.data);
@@ -161,7 +161,7 @@ export class DashboardService {
    */
   static async getUserGrowthChart(params?: DashboardQueryParams): Promise<UserGrowthData[]> {
     try {
-      const response = await api.get<APIUserGrowthData[]>('/admin/dashboard/user-growth', {
+      const response = await api.get<APIUserGrowthData[]>('/dashboard/user-growth-chart', {
         params,
       });
       return DashboardTransformer.transformUserGrowthData(response.data);
