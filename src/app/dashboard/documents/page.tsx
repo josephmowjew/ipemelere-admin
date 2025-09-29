@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ListPageLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ import {
   XCircleIcon
 } from '@heroicons/react/24/outline';
 
-export default function DocumentsPage() {
+function DocumentsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const statusFilter = searchParams.get('status');
@@ -41,7 +41,6 @@ export default function DocumentsPage() {
   return (
     <ListPageLayout
       title="Document Management"
-      description="Review and manage documents from drivers and passengers"
       breadcrumbs={breadcrumbs}
     >
       {/* Quick Stats */}
@@ -177,5 +176,13 @@ export default function DocumentsPage() {
         )}
       </Card>
     </ListPageLayout>
+  );
+}
+
+export default function DocumentsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DocumentsContent />
+    </Suspense>
   );
 }

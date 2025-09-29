@@ -11,7 +11,6 @@ import { ListPageLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
-  DocumentCheckIcon,
   UsersIcon,
   TruckIcon,
   ClockIcon,
@@ -48,7 +47,6 @@ function PendingDocumentsContent() {
   return (
     <ListPageLayout
       title="Pending Document Reviews"
-      description="Review and approve documents requiring verification"
       breadcrumbs={breadcrumbs}
     >
       {/* Quick Stats */}
