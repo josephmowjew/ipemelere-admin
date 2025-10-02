@@ -5,6 +5,7 @@ import AuthProvider from "@/components/providers/AuthProvider";
 import QueryProvider from "@/components/providers/QueryProvider";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import NotificationContainer from "@/components/ui/NotificationContainer";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -106,6 +107,7 @@ export default function RootLayout({
             <NotificationProvider>
               {children}
               <NotificationContainer />
+              <Toaster />
             </NotificationProvider>
           </AuthProvider>
         </QueryProvider>

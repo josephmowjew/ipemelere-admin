@@ -185,23 +185,37 @@ export interface ComprehensiveRegistrationStatus {
 
 // Registration application list item (for admin dashboard)
 export interface RegistrationApplicationListItem {
-  applicationId: number;
-  driverId: number;
-  userId: number;
+  id: number; // Driver ID (used as applicationId for detail view)
   firstName: string;
   lastName: string;
   email: string;
-  phoneNumber: string;
+  phone: string; // Note: API returns 'phone', not 'phoneNumber'
   district: string;
   city?: string;
-  status: ApplicationStatus;
-  progressPercentage: number;
-  submittedAt: string;
-  lastUpdated: string;
-  documentsStatus: DocumentsStatus;
-  missingDocumentsCount: number;
-  canApprove: boolean;
-  canReject: boolean;
+  address?: string;
+  status: string; // Driver status (active, pending, etc.)
+  applicationStatus: ApplicationStatus; // Registration application status
+  verificationStatus: string;
+  documentVerificationStatus: string;
+  profilePicture: string | null;
+  licenseNumber?: string;
+  licenseExpiryDate?: string;
+  drivingExperience?: number;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  emergencyContactRelationship?: string;
+  rating: string;
+  totalRides: number;
+  isOnShift: boolean;
+  createdAt: string;
+  updatedAt: string;
+  adminNotes: string | null;
+  vehicleDetails?: {
+    make: string;
+    model: string;
+    year: number;
+    plateNumber: string;
+  };
 }
 
 // Phone verification request

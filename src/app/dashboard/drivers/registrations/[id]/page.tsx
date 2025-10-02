@@ -7,6 +7,8 @@
 
 import React, { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { DetailPageLayout } from '@/components/layout/DashboardLayout';
+import { toast } from 'sonner';
 import {
   Card,
   CardContent,
@@ -20,7 +22,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  ArrowLeftIcon,
   CheckCircleIcon,
   XCircleIcon,
   ExclamationTriangleIcon,
@@ -60,15 +61,25 @@ export default function RegistrationDetailPage({ params }: PageProps) {
         applicationId,
         notes: actionNotes || undefined,
       });
-      router.push('/dashboard/drivers/registrations');
+      toast.success('Application Approved', {
+        description: `${application?.firstName} ${application?.lastName}'s application has been approved successfully.`,
+      });
+      setTimeout(() => {
+        router.push('/dashboard/drivers/registrations');
+      }, 1000);
     } catch (error) {
       console.error('Failed to approve application:', error);
+      toast.error('Approval Failed', {
+        description: 'Failed to approve application. Please try again.',
+      });
     }
   };
 
   const handleReject = async (): Promise<void> => {
     if (!actionNotes.trim()) {
-      alert('Please provide a reason for rejection');
+      toast.error('Rejection Reason Required', {
+        description: 'Please provide a reason for rejection',
+      });
       return;
     }
 
@@ -77,15 +88,25 @@ export default function RegistrationDetailPage({ params }: PageProps) {
         applicationId,
         reason: actionNotes,
       });
-      router.push('/dashboard/drivers/registrations');
+      toast.success('Application Rejected', {
+        description: `${application?.firstName} ${application?.lastName}'s application has been rejected.`,
+      });
+      setTimeout(() => {
+        router.push('/dashboard/drivers/registrations');
+      }, 1000);
     } catch (error) {
       console.error('Failed to reject application:', error);
+      toast.error('Rejection Failed', {
+        description: 'Failed to reject application. Please try again.',
+      });
     }
   };
 
   const handleRequestChanges = async (): Promise<void> => {
     if (!actionNotes.trim()) {
-      alert('Please provide details about required changes');
+      toast.error('Changes Required', {
+        description: 'Please provide details about required changes',
+      });
       return;
     }
 
@@ -94,15 +115,31 @@ export default function RegistrationDetailPage({ params }: PageProps) {
         applicationId,
         changes: actionNotes,
       });
+      toast.success('Changes Requested', {
+        description: 'Driver has been notified about the required changes.',
+      });
       setShowChangesDialog(false);
       setActionNotes('');
     } catch (error) {
       console.error('Failed to request changes:', error);
+      toast.error('Request Failed', {
+        description: 'Failed to request changes. Please try again.',
+      });
     }
   };
 
   const getStatusBadge = (status: ApplicationStatus): React.ReactElement => {
     const config = APPLICATION_STATUS_CONFIG[status];
+
+    // Handle undefined config (unknown status)
+    if (!config) {
+      return (
+        <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200">
+          {status}
+        </Badge>
+      );
+    }
+
     const colorClasses = {
       green: 'bg-green-100 text-green-800 border-green-200',
       yellow: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -132,35 +169,30 @@ export default function RegistrationDetailPage({ params }: PageProps) {
 
   if (!application) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">Application not found</p>
-        <Button onClick={() => router.back()} className="mt-4">
-          Go Back
-        </Button>
-      </div>
+      <DetailPageLayout
+        title="Application Not Found"
+        backUrl="/dashboard/drivers/registrations"
+      >
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Application not found</p>
+          <Button onClick={() => router.back()} className="mt-4">
+            Go Back
+          </Button>
+        </div>
+      </DetailPageLayout>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => router.back()}>
-            <ArrowLeftIcon className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              {application.firstName} {application.lastName}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Driver ID: {application.id}
-            </p>
-          </div>
-        </div>
-        {application.applicationStatus && getStatusBadge(application.applicationStatus as ApplicationStatus)}
-      </div>
+    <DetailPageLayout
+      title={`${application.firstName} ${application.lastName}`}
+      subtitle={`Driver ID: ${application.id}`}
+      backUrl="/dashboard/drivers/registrations"
+      headerAction={
+        application.applicationStatus ? getStatusBadge(application.applicationStatus as ApplicationStatus) : undefined
+      }
+    >
+      <div className="space-y-6">
 
       {/* Main Content Grid */}
       <div className="grid gap-6 md:grid-cols-2">
@@ -471,7 +503,8 @@ export default function RegistrationDetailPage({ params }: PageProps) {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </DetailPageLayout>
   );
 }
 

@@ -731,17 +731,17 @@ export const adminRegistrationAPI = {
 
   /**
    * Approve registration application (admin)
-   * PATCH /admin/drivers/:driverId/application-status
+   * PUT /admin/drivers/:driverId
    */
   async approveApplication(
     driverId: number,
     notes?: string
   ): Promise<ApplicationReviewResponse> {
-    const response = await api.patch<ApplicationReviewResponse>(
-      `/admin/drivers/${driverId}/application-status`,
+    const response = await api.put<ApplicationReviewResponse>(
+      `/admin/drivers/${driverId}`,
       {
         applicationStatus: 'approved',
-        notes
+        adminNotes: notes
       }
     );
     return response.data;
@@ -749,19 +749,18 @@ export const adminRegistrationAPI = {
 
   /**
    * Reject registration application (admin)
-   * PATCH /admin/drivers/:driverId/application-status
+   * PUT /admin/drivers/:driverId
    */
   async rejectApplication(
     driverId: number,
     reason: string,
     notes?: string
   ): Promise<ApplicationReviewResponse> {
-    const response = await api.patch<ApplicationReviewResponse>(
-      `/admin/drivers/${driverId}/application-status`,
+    const response = await api.put<ApplicationReviewResponse>(
+      `/admin/drivers/${driverId}`,
       {
         applicationStatus: 'rejected',
-        reason,
-        notes
+        adminNotes: notes || reason
       }
     );
     return response.data;
@@ -769,19 +768,18 @@ export const adminRegistrationAPI = {
 
   /**
    * Request changes to application (admin)
-   * PATCH /admin/drivers/:driverId/application-status
+   * PUT /admin/drivers/:driverId
    */
   async requestChanges(
     driverId: number,
     changes: string,
     notes?: string
   ): Promise<ApplicationReviewResponse> {
-    const response = await api.patch<ApplicationReviewResponse>(
-      `/admin/drivers/${driverId}/application-status`,
+    const response = await api.put<ApplicationReviewResponse>(
+      `/admin/drivers/${driverId}`,
       {
         applicationStatus: 'documents_rejected',
-        changes,
-        notes
+        adminNotes: notes || changes
       }
     );
     return response.data;

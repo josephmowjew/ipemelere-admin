@@ -36,6 +36,7 @@ import {
 import { useDriverDetails, useUpdateDriverStatus, useUpdateDriver, useApproveDriverDocument, useRejectDriverDocument, useDownloadDriverDocument } from '@/hooks/api/useDriverData';
 import { driverAPI, type Driver, type DriverDocument, DriverUpdateData, DriverStatusChangeData } from '@/lib/api/drivers';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export default function DriverDetailPage() {
   const params = useParams();
@@ -82,11 +83,31 @@ export default function DriverDetailPage() {
       data
     }, {
       onSuccess: () => {
-        console.log(`Driver status changed to ${newStatus}`);
+        // Show success toast based on status change
+        if (newStatus === 'active') {
+          toast.success('Account Activated', {
+            description: `${driver.firstName} ${driver.lastName}'s account has been activated successfully.`,
+          });
+        } else if (newStatus === 'suspended') {
+          toast.success('Account Suspended', {
+            description: `${driver.firstName} ${driver.lastName}'s account has been suspended.`,
+          });
+        } else if (newStatus === 'inactive') {
+          toast.success('Account Deactivated', {
+            description: `${driver.firstName} ${driver.lastName}'s account has been deactivated.`,
+          });
+        } else {
+          toast.success('Status Updated', {
+            description: `Driver status changed to ${newStatus}`,
+          });
+        }
         refetchAll();
       },
       onError: (err) => {
         console.error('Failed to update driver status:', err);
+        toast.error('Status Update Failed', {
+          description: 'Failed to update driver status. Please try again.',
+        });
       }
     });
   };
@@ -294,12 +315,12 @@ export default function DriverDetailPage() {
         <div className="flex gap-2">
           <Button
             size="sm"
-            onClick={() => handleStatusChange('active', 'Driver application approved')}
+            onClick={() => handleStatusChange('active', 'Driver account activated')}
             className="bg-green-600 hover:bg-green-700"
             disabled={updateStatusMutation.isPending}
           >
             <CheckCircleIcon className="h-4 w-4 mr-2" />
-            {updateStatusMutation.isPending ? 'Approving...' : 'Approve'}
+            {updateStatusMutation.isPending ? 'Activating...' : 'Activate Account'}
           </Button>
           <Button
             variant="outline"

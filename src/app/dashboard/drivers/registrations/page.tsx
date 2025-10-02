@@ -7,6 +7,7 @@
 
 import React, { Suspense, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { ListPageLayout } from '@/components/layout/DashboardLayout';
 import {
   Card,
   CardContent,
@@ -112,12 +113,22 @@ function RegistrationsListContent(): React.ReactElement {
     refetch();
   };
 
-  const handleViewDetails = (applicationId: number): void => {
-    router.push(`/dashboard/drivers/registrations/${applicationId}`);
+  const handleViewDetails = (driverId: number): void => {
+    router.push(`/dashboard/drivers/registrations/${driverId}`);
   };
 
   const getStatusBadge = (status: ApplicationStatus): React.ReactElement => {
     const config = APPLICATION_STATUS_CONFIG[status];
+
+    // Handle undefined config (unknown status)
+    if (!config) {
+      return (
+        <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200">
+          {status}
+        </Badge>
+      );
+    }
+
     const colorClasses = {
       green: 'bg-green-100 text-green-800 border-green-200',
       yellow: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -134,16 +145,12 @@ function RegistrationsListContent(): React.ReactElement {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Driver Registrations</h1>
-          <p className="text-muted-foreground mt-1">
-            Review and manage pending driver registration applications
-          </p>
-        </div>
-      </div>
+    <ListPageLayout
+      title="Driver Registrations"
+      description="Review and manage pending driver registration applications"
+      backUrl="/dashboard/drivers"
+    >
+      <div className="space-y-6">
 
       {/* Stats Cards */}
       <RegistrationStatsCards />
@@ -226,7 +233,7 @@ function RegistrationsListContent(): React.ReactElement {
             <div className="space-y-4">
               {applications.map((application: RegistrationApplicationListItem) => (
                 <div
-                  key={application.applicationId}
+                  key={application.id}
                   className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
                 >
                   {/* Application Info */}
@@ -235,21 +242,21 @@ function RegistrationsListContent(): React.ReactElement {
                       <h3 className="font-semibold text-lg">
                         {application.firstName} {application.lastName}
                       </h3>
-                      {getStatusBadge(application.status)}
+                      {getStatusBadge(application.applicationStatus)}
                     </div>
                     <div className="text-sm text-muted-foreground space-y-0.5">
                       <div className="flex items-center gap-2">
                         <span>📧 {application.email}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span>📱 {application.phoneNumber}</span>
+                        <span>📱 {application.phone}</span>
                       </div>
                       <div>
-                        📄 {application.missingDocumentsCount === 0 ? 'Documents uploaded' : `${application.missingDocumentsCount} documents missing`}
+                        📄 {application.documentVerificationStatus === 'verified' ? 'Documents verified' : 'Documents pending'}
                       </div>
                       <div className="text-xs">
-                        Applied {formatRelativeTime(new Date(application.submittedAt))} •{' '}
-                        {formatDate(new Date(application.submittedAt))}
+                        Applied {formatRelativeTime(new Date(application.createdAt))} •{' '}
+                        {formatDate(new Date(application.createdAt))}
                       </div>
                     </div>
                   </div>
@@ -257,7 +264,7 @@ function RegistrationsListContent(): React.ReactElement {
                   {/* Actions */}
                   <div className="mt-4 sm:mt-0 sm:ml-4">
                     <Button
-                      onClick={() => handleViewDetails(application.applicationId)}
+                      onClick={() => handleViewDetails(application.id)}
                       variant="outline"
                       className="w-full sm:w-auto"
                     >
@@ -277,7 +284,8 @@ function RegistrationsListContent(): React.ReactElement {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </ListPageLayout>
   );
 }
 
