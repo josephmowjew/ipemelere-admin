@@ -15,8 +15,19 @@ import {
   type UseMutationResult,
   type InfiniteData
 } from '@tanstack/react-query';
-import { driverAPI, type Driver, type DriverListParams, type DriverUpdateData, type DriverStatusChangeData, type DocumentReviewData, type DriverDocument } from '@/lib/api/drivers';
+import { driverAPI, driverRegistrationAPI, adminRegistrationAPI, type Driver, type DriverListParams, type DriverUpdateData, type DriverStatusChangeData, type DocumentReviewData, type DriverDocument } from '@/lib/api/drivers';
 import type { PaginationResponse, ActivityRecord, RideRecord, DriverAnalytics } from '@/lib/api/types';
+import type {
+  DriverRegistrationRequest,
+  DriverRegistrationResponse,
+  RegistrationApplicationStatus,
+  RegistrationApplicationListItem,
+  PhoneVerificationResponse,
+  PhoneVerificationCodeResponse,
+  DocumentUploadResponse,
+  VehicleDocumentUploadResponse,
+  ApplicationReviewResponse,
+} from '@/types/registration';
 
 // Query keys for consistent caching
 export const driverQueryKeys = {
@@ -31,6 +42,16 @@ export const driverQueryKeys = {
   documents: (id: number) => [...driverQueryKeys.detail(id), 'documents'] as const,
   pendingDocuments: () => [...driverQueryKeys.all, 'pendingDocuments'] as const,
   export: (params?: Omit<DriverListParams, 'page' | 'limit'>) => [...driverQueryKeys.all, 'export', params] as const,
+  registration: {
+    all: ['drivers', 'registration'] as const,
+    applications: (params?: { page?: number; limit?: number; status?: string; search?: string }) =>
+      [...driverQueryKeys.all, 'registration', 'applications', params] as const,
+    application: (id: number) => [...driverQueryKeys.all, 'registration', 'application', id] as const,
+    status: (driverId: number) => [...driverQueryKeys.all, 'registration', 'status', driverId] as const,
+    verificationStatus: (userId: number) => [...driverQueryKeys.all, 'registration', 'verification', userId] as const,
+    comprehensiveStatus: (userId: number) => [...driverQueryKeys.all, 'registration', 'comprehensive', userId] as const,
+    stats: () => [...driverQueryKeys.all, 'registration', 'stats'] as const,
+  },
 };
 
 // Hook for paginated driver list
@@ -567,6 +588,304 @@ export const useDriverPrefetch = () => {
   };
 };
 
+// ============================================================================
+// DRIVER REGISTRATION HOOKS
+// ============================================================================
+
+/**
+ * Hook for registering a new driver
+ */
+export const useRegisterDriver = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: DriverRegistrationRequest): Promise<DriverRegistrationResponse> => {
+      return driverRegistrationAPI.registerDriver(data);
+    },
+    onSuccess: () => {
+      // Invalidate driver lists to show new registration
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.registration.applications() });
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.registration.stats() });
+    },
+    onError: (error) => {
+      console.error('Failed to register driver:', error);
+    },
+  });
+};
+
+/**
+ * Hook for getting registration application status
+ */
+export const useRegistrationStatus = (driverId: number) => {
+  return useQuery({
+    queryKey: driverQueryKeys.registration.status(driverId),
+    queryFn: () => driverRegistrationAPI.getApplicationStatus(driverId),
+    staleTime: 1 * 60 * 1000, // 1 minute
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!driverId && driverId > 0,
+    refetchOnWindowFocus: true,
+  });
+};
+
+/**
+ * Hook for uploading driver license during registration
+ */
+export const useUploadLicense = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      driverId,
+      file,
+      notes,
+    }: {
+      driverId: number;
+      file: File;
+      notes?: string;
+    }): Promise<DocumentUploadResponse> => {
+      return driverRegistrationAPI.uploadLicense(driverId, file, notes);
+    },
+    onSuccess: (_, { driverId }) => {
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.registration.status(driverId) });
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.documents(driverId) });
+    },
+    onError: (error) => {
+      console.error('Failed to upload license:', error);
+    },
+  });
+};
+
+/**
+ * Hook for uploading vehicle documents during registration
+ */
+export const useUploadVehicleDocuments = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      driverId,
+      files,
+      notes,
+    }: {
+      driverId: number;
+      files: File[];
+      notes?: string;
+    }): Promise<VehicleDocumentUploadResponse> => {
+      return driverRegistrationAPI.uploadVehicleDocuments(driverId, files, notes);
+    },
+    onSuccess: (_, { driverId }) => {
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.registration.status(driverId) });
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.documents(driverId) });
+    },
+    onError: (error) => {
+      console.error('Failed to upload vehicle documents:', error);
+    },
+  });
+};
+
+/**
+ * Hook for sending phone verification code
+ */
+export const useSendPhoneVerification = () => {
+  return useMutation({
+    mutationFn: (userId: number): Promise<PhoneVerificationResponse> => {
+      return driverRegistrationAPI.sendPhoneVerification(userId);
+    },
+    onError: (error) => {
+      console.error('Failed to send phone verification:', error);
+    },
+  });
+};
+
+/**
+ * Hook for verifying phone number
+ */
+export const useVerifyPhone = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      userId,
+      code,
+    }: {
+      userId: number;
+      code: string;
+    }): Promise<PhoneVerificationCodeResponse> => {
+      return driverRegistrationAPI.verifyPhone(userId, code);
+    },
+    onSuccess: (_, { userId }) => {
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.registration.verificationStatus(userId) });
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.registration.comprehensiveStatus(userId) });
+    },
+    onError: (error) => {
+      console.error('Failed to verify phone:', error);
+    },
+  });
+};
+
+/**
+ * Hook for getting verification status
+ */
+export const useVerificationStatus = (userId: number) => {
+  return useQuery({
+    queryKey: driverQueryKeys.registration.verificationStatus(userId),
+    queryFn: () => driverRegistrationAPI.getVerificationStatus(userId),
+    staleTime: 1 * 60 * 1000, // 1 minute
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!userId && userId > 0,
+    refetchOnWindowFocus: true,
+  });
+};
+
+/**
+ * Hook for getting comprehensive registration status
+ */
+export const useComprehensiveStatus = (userId: number) => {
+  return useQuery({
+    queryKey: driverQueryKeys.registration.comprehensiveStatus(userId),
+    queryFn: () => driverRegistrationAPI.getComprehensiveStatus(userId),
+    staleTime: 1 * 60 * 1000, // 1 minute
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!userId && userId > 0,
+    refetchOnWindowFocus: true,
+  });
+};
+
+// ============================================================================
+// ADMIN REGISTRATION MANAGEMENT HOOKS
+// ============================================================================
+
+/**
+ * Hook for getting registration applications (admin)
+ */
+export const useRegistrationApplications = (params: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  search?: string;
+} = {}) => {
+  return useQuery({
+    queryKey: driverQueryKeys.registration.applications(params),
+    queryFn: () => adminRegistrationAPI.getApplications(params),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: true,
+    placeholderData: (previousData) => previousData,
+  });
+};
+
+/**
+ * Hook for getting detailed application info (admin)
+ */
+export const useRegistrationApplication = (applicationId: number) => {
+  return useQuery({
+    queryKey: driverQueryKeys.registration.application(applicationId),
+    queryFn: () => adminRegistrationAPI.getApplicationDetail(applicationId),
+    staleTime: 1 * 60 * 1000, // 1 minute
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!applicationId && applicationId > 0,
+  });
+};
+
+/**
+ * Hook for approving registration application (admin)
+ */
+export const useApproveApplication = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      applicationId,
+      notes,
+    }: {
+      applicationId: number;
+      notes?: string;
+    }): Promise<ApplicationReviewResponse> => {
+      return adminRegistrationAPI.approveApplication(applicationId, notes);
+    },
+    onSuccess: (_, { applicationId }) => {
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.registration.application(applicationId) });
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.registration.applications() });
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.registration.stats() });
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.lists() });
+    },
+    onError: (error) => {
+      console.error('Failed to approve application:', error);
+    },
+  });
+};
+
+/**
+ * Hook for rejecting registration application (admin)
+ */
+export const useRejectApplication = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      applicationId,
+      reason,
+      notes,
+    }: {
+      applicationId: number;
+      reason: string;
+      notes?: string;
+    }): Promise<ApplicationReviewResponse> => {
+      return adminRegistrationAPI.rejectApplication(applicationId, reason, notes);
+    },
+    onSuccess: (_, { applicationId }) => {
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.registration.application(applicationId) });
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.registration.applications() });
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.registration.stats() });
+    },
+    onError: (error) => {
+      console.error('Failed to reject application:', error);
+    },
+  });
+};
+
+/**
+ * Hook for requesting changes to application (admin)
+ */
+export const useRequestChanges = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      applicationId,
+      changes,
+      notes,
+    }: {
+      applicationId: number;
+      changes: string;
+      notes?: string;
+    }): Promise<ApplicationReviewResponse> => {
+      return adminRegistrationAPI.requestChanges(applicationId, changes, notes);
+    },
+    onSuccess: (_, { applicationId }) => {
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.registration.application(applicationId) });
+      queryClient.invalidateQueries({ queryKey: driverQueryKeys.registration.applications() });
+    },
+    onError: (error) => {
+      console.error('Failed to request changes:', error);
+    },
+  });
+};
+
+/**
+ * Hook for getting registration statistics (admin)
+ */
+export const useRegistrationStats = () => {
+  return useQuery({
+    queryKey: driverQueryKeys.registration.stats(),
+    queryFn: () => adminRegistrationAPI.getRegistrationStats(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: true,
+  });
+};
+
 // Export types for better TypeScript support
 export type DriverQuery = UseQueryResult<Driver>;
 export type DriverListQuery = UseQueryResult<PaginationResponse<Driver>>;
@@ -577,3 +896,11 @@ export type DriverMutation = UseMutationResult<Driver, Error, { id: number; data
 export type DriverStatusMutation = UseMutationResult<Driver, Error, { id: number; data: DriverStatusChangeData }>;
 export type DriverExportMutation = UseMutationResult<Blob, Error, Omit<DriverListParams, 'page' | 'limit'>>;
 export type InfiniteDriverQuery = UseQueryResult<InfiniteData<PaginationResponse<Driver>, unknown>, Error>;
+
+// Registration types
+export type RegistrationMutation = UseMutationResult<DriverRegistrationResponse, Error, DriverRegistrationRequest>;
+export type RegistrationApplicationsQuery = UseQueryResult<PaginationResponse<RegistrationApplicationListItem>>;
+export type RegistrationApplicationQuery = UseQueryResult<RegistrationApplicationListItem>;
+export type RegistrationStatusQuery = UseQueryResult<RegistrationApplicationStatus>;
+export type ApproveApplicationMutation = UseMutationResult<ApplicationReviewResponse, Error, { applicationId: number; notes?: string }>;
+export type RejectApplicationMutation = UseMutationResult<ApplicationReviewResponse, Error, { applicationId: number; reason: string; notes?: string }>;

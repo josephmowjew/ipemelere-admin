@@ -22,12 +22,14 @@ import {
   ClockIcon,
   CheckCircleIcon,
   ChevronDownIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
+  UserPlusIcon,
 } from '@heroicons/react/24/outline';
 import { type Driver, type DriverListParams } from '@/lib/api/drivers';
 import { useDrivers, useDriverStats, useExportDrivers } from '@/hooks/api/useDriverData';
 import { MALAWI_DISTRICTS } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
+import { DriverRegistrationModal } from '@/components/modals/DriverRegistrationModal';
 
 interface DriverFilters {
   search: string;
@@ -83,6 +85,7 @@ function DriversPageContent() {
   const [filters, setFilters] = useState<DriverFilters>(getInitialFilters());
   const [currentPage, setCurrentPage] = useState(1);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [showRegistrationModal, setShowRegistrationModal] = useState(false);
 
   // Update filters when URL parameters change
   useEffect(() => {
@@ -244,7 +247,20 @@ function DriversPageContent() {
   // Page actions
   const actions = (
     <div className="flex items-center gap-2">
-      <Button 
+      <Button
+        onClick={() => setShowRegistrationModal(true)}
+      >
+        <UserPlusIcon className="h-4 w-4 mr-2" />
+        Register New Driver
+      </Button>
+      <Button
+        variant="outline"
+        onClick={() => router.push('/dashboard/drivers/registrations')}
+      >
+        <ClockIcon className="h-4 w-4 mr-2" />
+        Pending Registrations
+      </Button>
+      <Button
         variant="outline"
         onClick={() => router.push('/dashboard/drivers/documents/pending')}
       >
@@ -633,6 +649,17 @@ function DriversPageContent() {
           </div>
         )}
       </Card>
+
+      {/* Driver Registration Modal */}
+      <DriverRegistrationModal
+        open={showRegistrationModal}
+        onClose={() => setShowRegistrationModal(false)}
+        onSuccess={(driverId) => {
+          console.log('Driver registered successfully:', driverId);
+          setShowRegistrationModal(false);
+          // Optionally refresh the drivers list or navigate to the new driver's page
+        }}
+      />
     </ListPageLayout>
   );
 }

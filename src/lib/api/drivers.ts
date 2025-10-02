@@ -6,6 +6,19 @@
 import { api } from './client';
 import { ApiResponse, PaginationParams, PaginationResponse, VerificationStatus, RideRecord, ActivityRecord, DriverAnalytics } from './types';
 import { type DocumentStatus } from './documents';
+import type {
+  DriverRegistrationRequest,
+  DriverRegistrationResponse,
+  RegistrationApplicationStatus,
+  RegistrationApplicationListItem,
+  PhoneVerificationResponse,
+  PhoneVerificationCodeResponse,
+  DocumentUploadResponse,
+  VehicleDocumentUploadResponse,
+  ApplicationReviewResponse,
+  VerificationStatusResponse,
+  ComprehensiveRegistrationStatus,
+} from '@/types/registration';
 
 // Types for Driver Management
 export interface Driver {
@@ -556,4 +569,260 @@ export const driverAPI = {
       pendingVerification: data?.pendingVerification || 0,
     };
   }
+};
+
+// Driver Registration API (public endpoints for new driver registration)
+export const driverRegistrationAPI = {
+  /**
+   * Register a new driver (admin-initiated or public)
+   * POST /auth/register/driver
+   */
+  async registerDriver(data: DriverRegistrationRequest): Promise<DriverRegistrationResponse> {
+    const response = await api.post<DriverRegistrationResponse>(
+      '/auth/register/driver',
+      data
+    );
+    return response.data;
+  },
+
+  /**
+   * Upload driver license document during registration
+   * POST /auth/register/driver/:driverId/upload-license
+   */
+  async uploadLicense(
+    driverId: number,
+    file: File,
+    notes?: string
+  ): Promise<DocumentUploadResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (notes) formData.append('notes', notes);
+
+    const response = await api.post<DocumentUploadResponse>(
+      `/auth/register/driver/${driverId}/upload-license`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data;
+  },
+
+  /**
+   * Upload vehicle documents during registration
+   * POST /auth/register/driver/:driverId/upload-vehicle-documents
+   */
+  async uploadVehicleDocuments(
+    driverId: number,
+    files: File[],
+    notes?: string
+  ): Promise<VehicleDocumentUploadResponse> {
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+    if (notes) formData.append('notes', notes);
+
+    const response = await api.post<VehicleDocumentUploadResponse>(
+      `/auth/register/driver/${driverId}/upload-vehicle-documents`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data;
+  },
+
+  /**
+   * Get registration application status
+   * GET /auth/register/driver/:driverId/status
+   */
+  async getApplicationStatus(driverId: number): Promise<RegistrationApplicationStatus> {
+    const response = await api.get<RegistrationApplicationStatus>(
+      `/auth/register/driver/${driverId}/status`
+    );
+    return response.data;
+  },
+
+  /**
+   * Send phone verification code
+   * POST /auth/send-phone-verification
+   */
+  async sendPhoneVerification(userId: number): Promise<PhoneVerificationResponse> {
+    const response = await api.post<PhoneVerificationResponse>(
+      '/auth/send-phone-verification',
+      { userId }
+    );
+    return response.data;
+  },
+
+  /**
+   * Verify phone number with code
+   * POST /auth/verify-phone
+   */
+  async verifyPhone(userId: number, code: string): Promise<PhoneVerificationCodeResponse> {
+    const response = await api.post<PhoneVerificationCodeResponse>(
+      '/auth/verify-phone',
+      { userId, code }
+    );
+    return response.data;
+  },
+
+  /**
+   * Get verification status (email, phone, documents)
+   * GET /auth/verification-status/:userId
+   */
+  async getVerificationStatus(userId: number): Promise<VerificationStatusResponse> {
+    const response = await api.get<VerificationStatusResponse>(
+      `/auth/verification-status/${userId}`
+    );
+    return response.data;
+  },
+
+  /**
+   * Get comprehensive registration status
+   * GET /auth/registration-status/:userId
+   */
+  async getComprehensiveStatus(userId: number): Promise<ComprehensiveRegistrationStatus> {
+    const response = await api.get<ComprehensiveRegistrationStatus>(
+      `/auth/registration-status/${userId}`
+    );
+    return response.data;
+  },
+};
+
+// Admin Registration Management API (admin-only endpoints)
+export const adminRegistrationAPI = {
+  /**
+   * Get list of registration applications (admin)
+   * GET /admin/drivers?applicationStatus=...
+   */
+  async getApplications(params: PaginationParams & {
+    status?: string;
+    search?: string;
+  } = {}): Promise<PaginationResponse<RegistrationApplicationListItem>> {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.set('page', params.page.toString());
+    if (params.limit) searchParams.set('limit', params.limit.toString());
+    // Use applicationStatus query parameter instead of status
+    if (params.status) searchParams.set('applicationStatus', params.status);
+    if (params.search) searchParams.set('search', params.search);
+
+    const response = await api.get<PaginationResponse<RegistrationApplicationListItem>>(
+      `/admin/drivers?${searchParams.toString()}`
+    );
+    return response.data;
+  },
+
+  /**
+   * Get detailed driver information (admin)
+   * GET /admin/drivers/:driverId
+   */
+  async getApplicationDetail(driverId: number): Promise<Driver> {
+    const response = await api.get<ApiResponse<Driver>>(
+      `/admin/drivers/${driverId}`
+    );
+    return response.data.data || response.data;
+  },
+
+  /**
+   * Approve registration application (admin)
+   * PATCH /admin/drivers/:driverId/application-status
+   */
+  async approveApplication(
+    driverId: number,
+    notes?: string
+  ): Promise<ApplicationReviewResponse> {
+    const response = await api.patch<ApplicationReviewResponse>(
+      `/admin/drivers/${driverId}/application-status`,
+      {
+        applicationStatus: 'approved',
+        notes
+      }
+    );
+    return response.data;
+  },
+
+  /**
+   * Reject registration application (admin)
+   * PATCH /admin/drivers/:driverId/application-status
+   */
+  async rejectApplication(
+    driverId: number,
+    reason: string,
+    notes?: string
+  ): Promise<ApplicationReviewResponse> {
+    const response = await api.patch<ApplicationReviewResponse>(
+      `/admin/drivers/${driverId}/application-status`,
+      {
+        applicationStatus: 'rejected',
+        reason,
+        notes
+      }
+    );
+    return response.data;
+  },
+
+  /**
+   * Request changes to application (admin)
+   * PATCH /admin/drivers/:driverId/application-status
+   */
+  async requestChanges(
+    driverId: number,
+    changes: string,
+    notes?: string
+  ): Promise<ApplicationReviewResponse> {
+    const response = await api.patch<ApplicationReviewResponse>(
+      `/admin/drivers/${driverId}/application-status`,
+      {
+        applicationStatus: 'documents_rejected',
+        changes,
+        notes
+      }
+    );
+    return response.data;
+  },
+
+  /**
+   * Get registration statistics (admin)
+   * This aggregates counts from /admin/drivers with different applicationStatus filters
+   */
+  async getRegistrationStats(): Promise<{
+    totalApplications: number;
+    pendingReview: number;
+    approved: number;
+    rejected: number;
+    pendingDocuments: number;
+  }> {
+    // Since there's no dedicated stats endpoint, we'll make parallel requests
+    // to get counts for different application statuses
+    const [pending, underReview, approved, rejected] = await Promise.all([
+      api.get('/admin/drivers?applicationStatus=pending_documents&limit=1'),
+      api.get('/admin/drivers?applicationStatus=under_review&limit=1'),
+      api.get('/admin/drivers?applicationStatus=approved&limit=1'),
+      api.get('/admin/drivers?applicationStatus=rejected&limit=1'),
+    ]);
+
+    const pendingData = pending.data?.data || pending.data;
+    const reviewData = underReview.data?.data || underReview.data;
+    const approvedData = approved.data?.data || approved.data;
+    const rejectedData = rejected.data?.data || rejected.data;
+
+    const pendingCount = pendingData?.pagination?.total || 0;
+    const reviewCount = reviewData?.pagination?.total || 0;
+    const approvedCount = approvedData?.pagination?.total || 0;
+    const rejectedCount = rejectedData?.pagination?.total || 0;
+
+    return {
+      totalApplications: pendingCount + reviewCount + approvedCount + rejectedCount,
+      pendingReview: reviewCount,
+      approved: approvedCount,
+      rejected: rejectedCount,
+      pendingDocuments: pendingCount,
+    };
+  },
 };
