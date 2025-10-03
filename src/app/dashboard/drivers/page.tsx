@@ -592,19 +592,10 @@ function DriversPageContent() {
                           variant="ghost"
                           size="sm"
                           onClick={() => router.push(`/dashboard/drivers/${driver.id}`)}
+                          title="View driver details"
                         >
                           <EyeIcon className="h-4 w-4" />
                         </Button>
-                        {driver.documentVerificationStatus === 'pending' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => router.push(`/dashboard/drivers/${driver.id}/documents`)}
-                            className="text-yellow-600 hover:text-yellow-700"
-                          >
-                            <DocumentCheckIcon className="h-4 w-4" />
-                          </Button>
-                        )}
                       </div>
                     </td>
                   </tr>
