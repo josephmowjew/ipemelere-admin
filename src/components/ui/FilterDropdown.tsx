@@ -117,22 +117,31 @@ export function FilterDropdown({
         <span className="truncate">{getDisplayText()}</span>
         <div className="flex items-center gap-2 ml-2">
           {selectedValues.length > 0 && multiSelect && (
-            <button
+            <span
               onClick={(e) => {
                 e.stopPropagation();
                 handleClearAll();
               }}
-              className="p-0.5 hover:bg-accent rounded"
+              className="p-0.5 hover:bg-accent rounded cursor-pointer inline-flex items-center justify-center"
               aria-label="Clear all filters"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleClearAll();
+                }
+              }}
             >
               <XMarkIcon className="h-3 w-3" />
-            </button>
+            </span>
           )}
-          <ChevronDownIcon 
+          <ChevronDownIcon
             className={cn(
               'h-4 w-4 transition-transform',
               isOpen && 'rotate-180'
-            )} 
+            )}
           />
         </div>
       </Button>

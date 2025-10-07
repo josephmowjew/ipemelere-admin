@@ -67,12 +67,11 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     name: 'Rides',
     href: '/dashboard/rides',
     icon: MapIcon,
-    disabled: true,
-    comingSoon: true,
     children: [
-      { id: 'rides-active', name: 'Active Rides', href: '/dashboard/rides/active' },
-      { id: 'rides-history', name: 'Ride History', href: '/dashboard/rides/history' },
-      { id: 'rides-pricing', name: 'Pricing', href: '/dashboard/rides/pricing' },
+      { id: 'rides-all', name: 'All Rides', href: '/dashboard/rides' },
+      { id: 'rides-completed', name: 'Completed', href: '/dashboard/rides?status=completed' },
+      { id: 'rides-active', name: 'Active', href: '/dashboard/rides?status=in_progress' },
+      { id: 'rides-cancelled', name: 'Cancelled', href: '/dashboard/rides?status=cancelled' },
     ],
   },
   {
