@@ -31,10 +31,15 @@ import {
   ShieldCheckIcon,
   StarIcon,
   CalendarIcon,
-  IdentificationIcon
+  IdentificationIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
 import { useDriverDetails, useUpdateDriverStatus, useUpdateDriver, useApproveDriverDocument, useRejectDriverDocument, useDownloadDriverDocument } from '@/hooks/api/useDriverData';
 import { driverAPI, type Driver, type DriverDocument, DriverUpdateData, DriverStatusChangeData } from '@/lib/api/drivers';
+import { useVehiclesByDriver } from '@/hooks/api/useVehicleData';
+import { VehicleStatusManager } from '@/components/vehicle/VehicleStatusManager';
+import { VehicleErrorBoundary } from '@/components/vehicle/VehicleErrorBoundary';
+import { type Vehicle } from '@/lib/api/vehicles';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -60,6 +65,33 @@ export default function DriverDetailPage() {
     driverError,
     refetchAll
   } = useDriverDetails(driverId);
+
+  // Get vehicles for this driver
+  const {
+    data: vehiclesData,
+    isLoading: vehiclesLoading,
+    refetch: refetchVehicles
+  } = useVehiclesByDriver(driverId);
+
+  // Create vehicle object from driver's vehicleDetails if available
+  const vehicleFromDriverDetails = driver?.vehicleDetails && driver.vehicleDetails.id ? {
+    id: Number(driver.vehicleDetails.id),
+    make: String(driver.vehicleDetails.make || 'Unknown'),
+    model: String(driver.vehicleDetails.model || 'Unknown'),
+    year: Number(driver.vehicleDetails.year || new Date().getFullYear()),
+    plateNumber: String(driver.vehicleDetails.plateNumber || 'Unknown'),
+    status: (driver.vehicleDetails.status as 'active' | 'inactive' | 'maintenance') || 'inactive',
+    capacity: Number(driver.vehicleDetails.capacity || 4),
+    type: (driver.vehicleDetails.type as 'sedan' | 'hatchback' | 'suv' | 'minibus') || 'sedan',
+    color: String(driver.vehicle?.color || 'Not specified'),
+    driverId: Number(driver.id), // Ensure this is a number
+    createdAt: String(driver.createdAt || new Date().toISOString()),
+    updatedAt: String(driver.updatedAt || new Date().toISOString()),
+    documentsVerified: Boolean(driver.documentVerificationStatus === 'verified'),
+    insuranceExpiryDate: driver.vehicle?.insuranceExpiryDate ? String(driver.vehicle.insuranceExpiryDate) : undefined,
+    registrationExpiryDate: driver.vehicle?.registrationExpiryDate ? String(driver.vehicle.registrationExpiryDate) : undefined,
+    inspectionExpiryDate: driver.vehicle?.inspectionExpiryDate ? String(driver.vehicle.inspectionExpiryDate) : undefined,
+  } : null;
 
 
 
@@ -217,6 +249,15 @@ export default function DriverDetailPage() {
     } catch (err) {
       console.error('Error viewing document:', err);
     }
+  };
+
+  // Vehicle status update handler
+  const handleVehicleStatusUpdate = async (updatedVehicle: Vehicle) => {
+    console.log('Vehicle status updated:', updatedVehicle);
+    // Refetch vehicles to show updated status
+    refetchVehicles();
+    // Also refetch driver data to ensure consistency
+    refetchAll();
   };
 
   if (isLoading) {
@@ -613,55 +654,210 @@ export default function DriverDetailPage() {
             <TruckIcon className="h-5 w-5" />
             Vehicle Information
           </h3>
-          {(driver.vehicle || driver.vehicleDetails) ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Vehicle</p>
-                  <p className="font-medium">
-                    {(driver.vehicle?.make || driver.vehicleDetails?.make)} {(driver.vehicle?.model || driver.vehicleDetails?.model)} {(driver.vehicle?.year || driver.vehicleDetails?.year) ? `(${driver.vehicle?.year || driver.vehicleDetails?.year})` : ''}
-                  </p>
+
+          <VehicleErrorBoundary
+            onError={(error, errorInfo) => {
+              console.error('Vehicle section error:', error, errorInfo);
+              toast.error('Vehicle Management Error', {
+                description: 'There was an error loading vehicle information. Please try refreshing the page.',
+              });
+            }}
+          >
+            {vehiclesData?.vehicles && vehiclesData.vehicles.length > 0 ? (
+            // Use vehicles from separate API call if available
+            <div className="space-y-6">
+              {vehiclesData.vehicles.map((vehicle) => (
+                <div key={vehicle.id} className="border border-border rounded-lg p-4">
+                  {/* Vehicle Header with Status */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h4 className="font-semibold text-lg">
+                        {vehicle.make} {vehicle.model} ({vehicle.year})
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Plate: {vehicle.plateNumber} • Type: {vehicle.type} • Capacity: {vehicle.capacity}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <VehicleStatusManager
+                        vehicle={vehicle}
+                        onStatusUpdate={handleVehicleStatusUpdate}
+                        compact={true}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Vehicle Details Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Vehicle ID</p>
+                        <p className="font-medium">#{vehicle.id}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Color</p>
+                        <p className="font-medium capitalize">{vehicle.color || 'Not specified'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Documents Verified</p>
+                        <p className="font-medium">
+                          {vehicle.documentsVerified ? (
+                            <span className="text-green-600">✓ Verified</span>
+                          ) : (
+                            <span className="text-yellow-600">⚠ Pending</span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Insurance Expiry</p>
+                        <p className="font-medium">
+                          {vehicle.insuranceExpiryDate
+                            ? new Date(vehicle.insuranceExpiryDate).toLocaleDateString()
+                            : 'Not specified'
+                          }
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Registration Expiry</p>
+                        <p className="font-medium">
+                          {vehicle.registrationExpiryDate
+                            ? new Date(vehicle.registrationExpiryDate).toLocaleDateString()
+                            : 'Not specified'
+                          }
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Inspection Expiry</p>
+                        <p className="font-medium">
+                          {vehicle.inspectionExpiryDate
+                            ? new Date(vehicle.inspectionExpiryDate).toLocaleDateString()
+                            : 'Not specified'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Vehicle Status Management */}
+                  <div className="border-t border-border pt-4">
+                    <VehicleStatusManager
+                      vehicle={vehicle}
+                      onStatusUpdate={handleVehicleStatusUpdate}
+                      showFullControls={true}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Plate Number</p>
-                  <p className="font-medium">{(driver.vehicle?.plateNumber || driver.vehicleDetails?.plateNumber) || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Color</p>
-                  <p className="font-medium capitalize">{(driver.vehicle?.color || driver.vehicleDetails?.color) || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Type</p>
-                  <p className="font-medium capitalize">{(driver.vehicle?.type || driver.vehicleDetails?.type) || 'N/A'}</p>
+              ))}
+
+              {/* Vehicle Summary */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-muted-foreground">
+                    Total Vehicles: {vehiclesData.total} •
+                    Active: {vehiclesData.active} •
+                    Inactive: {vehiclesData.inactive}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => refetchVehicles()}
+                    disabled={vehiclesLoading}
+                  >
+                    {vehiclesLoading ? (
+                      <ArrowPathIcon className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <ArrowPathIcon className="h-4 w-4 mr-2" />
+                    )}
+                    Refresh
+                  </Button>
                 </div>
               </div>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Insurance Expiry</p>
-                  <p className="font-medium">
-                    {(driver.vehicle?.insuranceExpiryDate || driver.vehicleDetails?.insuranceExpiryDate)
-                      ? new Date(driver.vehicle?.insuranceExpiryDate || driver.vehicleDetails?.insuranceExpiryDate || '').toLocaleDateString()
-                      : 'N/A'
-                    }
-                  </p>
+            </div>
+          ) : vehicleFromDriverDetails ? (
+            // Use vehicle from driver's vehicleDetails if available
+            <div className="space-y-6">
+              <div className="border border-border rounded-lg p-4">
+                {/* Vehicle Header with Status */}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h4 className="font-semibold text-lg">
+                      {vehicleFromDriverDetails.make} {vehicleFromDriverDetails.model} ({vehicleFromDriverDetails.year})
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Plate: {vehicleFromDriverDetails.plateNumber} • Type: {vehicleFromDriverDetails.type} • Capacity: {vehicleFromDriverDetails.capacity}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <VehicleStatusManager
+                      vehicle={vehicleFromDriverDetails}
+                      onStatusUpdate={handleVehicleStatusUpdate}
+                      compact={true}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Registration Expiry</p>
-                  <p className="font-medium">
-                    {(driver.vehicle?.registrationExpiryDate || driver.vehicleDetails?.registrationExpiryDate)
-                      ? new Date(driver.vehicle?.registrationExpiryDate || driver.vehicleDetails?.registrationExpiryDate || '').toLocaleDateString()
-                      : 'N/A'
-                    }
-                  </p>
+
+                {/* Vehicle Details Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Vehicle ID</p>
+                      <p className="font-medium">#{vehicleFromDriverDetails.id}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Color</p>
+                      <p className="font-medium capitalize">{vehicleFromDriverDetails.color || 'Not specified'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Documents Verified</p>
+                      <p className="font-medium">
+                        {vehicleFromDriverDetails.documentsVerified ? (
+                          <span className="text-green-600">✓ Verified</span>
+                        ) : (
+                          <span className="text-yellow-600">⚠ Pending</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Insurance Expiry</p>
+                      <p className="font-medium">
+                        {vehicleFromDriverDetails.insuranceExpiryDate
+                          ? new Date(vehicleFromDriverDetails.insuranceExpiryDate).toLocaleDateString()
+                          : 'Not specified'
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Registration Expiry</p>
+                      <p className="font-medium">
+                        {vehicleFromDriverDetails.registrationExpiryDate
+                          ? new Date(vehicleFromDriverDetails.registrationExpiryDate).toLocaleDateString()
+                          : 'Not specified'
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Inspection Expiry</p>
+                      <p className="font-medium">
+                        {vehicleFromDriverDetails.inspectionExpiryDate
+                          ? new Date(vehicleFromDriverDetails.inspectionExpiryDate).toLocaleDateString()
+                          : 'Not specified'
+                        }
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Inspection Expiry</p>
-                  <p className="font-medium">
-                    {(driver.vehicle?.inspectionExpiryDate || driver.vehicleDetails?.inspectionExpiryDate)
-                      ? new Date(driver.vehicle?.inspectionExpiryDate || driver.vehicleDetails?.inspectionExpiryDate || '').toLocaleDateString()
-                      : 'N/A'
-                    }
-                  </p>
+
+                {/* Vehicle Status Management */}
+                <div className="border-t border-border pt-4">
+                  <VehicleStatusManager
+                    vehicle={vehicleFromDriverDetails}
+                    onStatusUpdate={handleVehicleStatusUpdate}
+                    showFullControls={true}
+                  />
                 </div>
               </div>
             </div>
@@ -674,6 +870,7 @@ export default function DriverDetailPage() {
               </p>
             </div>
           )}
+          </VehicleErrorBoundary>
         </Card>
 
         {/* Document Verification */}

@@ -40,10 +40,13 @@ export interface Driver {
   isOnShift?: boolean;
   adminNotes?: string | null;
   vehicleDetails?: {
+    id: number;
     make: string;
     model: string;
     year: number;
     plateNumber: string;
+    status: 'active' | 'inactive' | 'maintenance';
+    capacity: number;
     color?: string;
     type?: 'sedan' | 'hatchback' | 'suv' | 'minibus';
     insuranceExpiryDate?: string;
@@ -169,10 +172,13 @@ const transformDriverResponse = (rawDriver: Record<string, unknown>): Driver => 
     lastActivity?: string;
     updatedAt?: string;
     vehicleDetails?: {
+      id?: number;
       make?: string;
       model?: string;
       year?: number;
       plateNumber?: string;
+      status?: string;
+      capacity?: number;
       color?: string;
       type?: string;
       insuranceExpiryDate?: string;
