@@ -91,6 +91,7 @@ export default function DriverDetailPage() {
     insuranceExpiryDate: driver.vehicle?.insuranceExpiryDate ? String(driver.vehicle.insuranceExpiryDate) : undefined,
     registrationExpiryDate: driver.vehicle?.registrationExpiryDate ? String(driver.vehicle.registrationExpiryDate) : undefined,
     inspectionExpiryDate: driver.vehicle?.inspectionExpiryDate ? String(driver.vehicle.inspectionExpiryDate) : undefined,
+    priority: 'medium' as const, // Add default priority
   } : null;
 
 

@@ -5,22 +5,26 @@
 
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  UsersIcon, 
-  TruckIcon, 
-  MapIcon, 
+import {
+  UsersIcon,
+  TruckIcon,
+  MapIcon,
   CurrencyDollarIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ClockIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { MetricCardsGrid } from '@/components/charts/MetricCard';
 import { ActivityFeed } from '@/components/charts/ActivityFeed';
 import { RevenueChart } from '@/components/charts/RevenueChart';
 import { UserGrowthChart } from '@/components/charts/UserGrowthChart';
-import { useDashboardSummary, useRevenueChart, useUserGrowthChart } from '@/hooks/api/useDashboardData';
+import { PendingVehiclesCard } from '@/components/vehicle/PendingVehiclesCard';
+import { useDashboardSummary, useRevenueChart, useUserGrowthChart, usePendingVehiclesSummary } from '@/hooks/api/useDashboardData';
+import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import type { MetricCardProps, SystemStatus } from '@/types/dashboard';
 
@@ -129,25 +133,28 @@ const SystemStatusCard: React.FC<{
 
 // Quick actions component
 const QuickActionsCard: React.FC = () => {
+  const { data: pendingSummary } = usePendingVehiclesSummary();
+
   const quickActions = [
+    {
+      title: 'Review Vehicles',
+      description: 'Pending approvals',
+      icon: TruckIcon,
+      href: '/dashboard/vehicles/pending',
+      count: pendingSummary?.totalPending || 0,
+    },
     {
       title: 'Manage Drivers',
       description: 'Review applications',
-      icon: TruckIcon,
+      icon: UsersIcon,
       href: '/dashboard/drivers',
-      count: 12,
+      count: 12, // This would come from driver applications API
     },
     {
       title: 'View Active Rides',
       description: 'Monitor live rides',
       icon: MapIcon,
       href: '/dashboard/rides/active',
-    },
-    {
-      title: 'Manage Passengers',
-      description: 'User management',
-      icon: UsersIcon,
-      href: '/dashboard/passengers',
     },
   ];
 
@@ -181,6 +188,8 @@ const QuickActionsCard: React.FC = () => {
 
 // Main dashboard page component
 export default function DashboardPage() {
+  const queryClient = useQueryClient();
+
   // Fetch dashboard data using React Query hooks
   const {
     metrics,
@@ -194,49 +203,75 @@ export default function DashboardPage() {
 
   const { data: revenueData, isLoading: revenueLoading, error: revenueError } = useRevenueChart({ period: 'month' });
   const { data: userGrowthData, isLoading: growthLoading, error: growthError } = useUserGrowthChart({ period: 'month' });
+  const { data: pendingSummary } = usePendingVehiclesSummary();
+
+  // Force refetch on mount
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+  }, [queryClient]);
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+  };
 
   // Transform metrics data to MetricCard props
   const metricCards: MetricCardProps[] = useMemo(() => {
-    if (!metrics) return [];
+    const pendingCount = pendingSummary?.totalPending || 0;
 
     return [
       {
         title: 'Total Drivers',
-        value: metrics.totalDrivers?.count || 0,
-        change: metrics.totalDrivers?.changePercent || 0,
-        changeLabel: metrics.totalDrivers?.changeLabel || 'from last month',
+        value: metrics?.totalDrivers?.count || 0,
+        change: metrics?.totalDrivers?.changePercent || 0,
+        changeLabel: metrics?.totalDrivers?.changeLabel || 'from last month',
         icon: TruckIcon,
-        trend: metrics.totalDrivers?.trend || 'neutral',
+        trend: metrics?.totalDrivers?.trend || 'neutral',
       },
       {
         title: 'Active Passengers',
-        value: metrics.activePassengers?.count || 0,
-        change: metrics.activePassengers?.changePercent || 0,
-        changeLabel: metrics.activePassengers?.changeLabel || 'from last month',
+        value: metrics?.activePassengers?.count || 0,
+        change: metrics?.activePassengers?.changePercent || 0,
+        changeLabel: metrics?.activePassengers?.changeLabel || 'from last month',
         icon: UsersIcon,
-        trend: metrics.activePassengers?.trend || 'neutral',
+        trend: metrics?.activePassengers?.trend || 'neutral',
       },
       {
         title: 'Completed Rides',
-        value: metrics.completedRides?.count || 0,
-        change: metrics.completedRides?.changePercent || 0,
-        changeLabel: metrics.completedRides?.changeLabel || 'from last month',
+        value: metrics?.completedRides?.count || 0,
+        change: metrics?.completedRides?.changePercent || 0,
+        changeLabel: metrics?.completedRides?.changeLabel || 'from last month',
         icon: MapIcon,
-        trend: metrics.completedRides?.trend || 'neutral',
+        trend: metrics?.completedRides?.trend || 'neutral',
       },
       {
         title: 'Monthly Revenue',
-        value: `${metrics.monthlyRevenue?.currency || 'MWK'} ${(metrics.monthlyRevenue?.amount || 0).toLocaleString()}`,
-        change: metrics.monthlyRevenue?.changePercent || 0,
-        changeLabel: metrics.monthlyRevenue?.changeLabel || 'from last month',
+        value: `${metrics?.monthlyRevenue?.currency || 'MWK'} ${(metrics?.monthlyRevenue?.amount || 0).toLocaleString()}`,
+        change: metrics?.monthlyRevenue?.changePercent || 0,
+        changeLabel: metrics?.monthlyRevenue?.changeLabel || 'from last month',
         icon: CurrencyDollarIcon,
-        trend: metrics.monthlyRevenue?.trend || 'neutral',
+        trend: metrics?.monthlyRevenue?.trend || 'neutral',
+      },
+      {
+        title: 'Pending Vehicles',
+        value: pendingCount,
+        change: pendingCount > 0 ? 0 : 0, // Would calculate from previous period if available
+        changeLabel: 'awaiting approval',
+        icon: ClockIcon,
+        trend: pendingCount > 10 ? 'up' : pendingCount > 5 ? 'neutral' : 'down',
       },
     ];
-  }, [metrics]);
+  }, [metrics, pendingSummary]);
 
   return (
-    <DashboardLayout title="Dashboard">
+    <DashboardLayout
+      title="Dashboard"
+      actions={
+        <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
+          <ArrowPathIcon className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
+          Refresh
+        </Button>
+      }
+    >
       <div className="space-y-6">
         {/* Welcome section */}
         <div>
@@ -288,6 +323,7 @@ export default function DashboardPage() {
           <div className="lg:col-span-2">
             <div className="space-y-6">
               <QuickActionsCard />
+              <PendingVehiclesCard maxItems={3} />
               <ActivityFeed
                 activities={recentActivity || []}
                 isLoading={isLoading}
@@ -298,9 +334,9 @@ export default function DashboardPage() {
             </div>
           </div>
           <div>
-            <SystemStatusCard 
-              systemStatus={systemStatus} 
-              isLoading={isLoading} 
+            <SystemStatusCard
+              systemStatus={systemStatus}
+              isLoading={isLoading}
             />
           </div>
         </div>

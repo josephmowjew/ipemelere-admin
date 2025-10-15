@@ -6,12 +6,18 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { RegistrationProgressBar } from '@/components/registration/RegistrationProgressBar';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
@@ -132,6 +138,7 @@ export function DriverRegistrationForm({
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = form;
 
@@ -225,13 +232,13 @@ export function DriverRegistrationForm({
       case 1:
         return <Step1PersonalInfo register={register} errors={errors} />;
       case 2:
-        return <Step2IdentityAddress register={register} errors={errors} />;
+        return <Step2IdentityAddress register={register} errors={errors} control={control} />;
       case 3:
-        return <Step3DriverInfo register={register} errors={errors} />;
+        return <Step3DriverInfo register={register} errors={errors} control={control} />;
       case 4:
-        return <Step4VehicleInfo register={register} errors={errors} />;
+        return <Step4VehicleInfo register={register} errors={errors} control={control} />;
       case 5:
-        return <Step5EmergencyContact register={register} errors={errors} />;
+        return <Step5EmergencyContact register={register} errors={errors} control={control} />;
       case 6:
         return <Step6BankingInfo register={register} errors={errors} />;
       case 7:
@@ -449,9 +456,11 @@ function Step1PersonalInfo({
 function Step2IdentityAddress({
   register,
   errors,
+  control,
 }: {
   register: ReturnType<typeof useForm>['register'];
   errors: ReturnType<typeof useForm>['formState']['errors'];
+  control: ReturnType<typeof useForm>['control'];
 }) {
   return (
     <div className="space-y-6">
@@ -496,13 +505,26 @@ function Step2IdentityAddress({
         <Label htmlFor="gender">
           Gender <span className="text-red-500">*</span>
         </Label>
-        <Select {...register('gender')} className={errors.gender ? 'border-red-500' : ''}>
-          <option value="">Select gender</option>
-          <option value={Gender.MALE}>Male</option>
-          <option value={Gender.FEMALE}>Female</option>
-          <option value={Gender.OTHER}>Other</option>
-          <option value={Gender.PREFER_NOT_TO_SAY}>Prefer not to say</option>
-        </Select>
+        <Controller
+          name="gender"
+          control={control}
+          render={({ field }) => (
+            <Select
+              value={field.value}
+              onValueChange={field.onChange}
+            >
+              <SelectTrigger className={errors.gender ? 'border-red-500' : ''}>
+                <SelectValue placeholder="Select gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={Gender.MALE}>Male</SelectItem>
+                <SelectItem value={Gender.FEMALE}>Female</SelectItem>
+                <SelectItem value={Gender.OTHER}>Other</SelectItem>
+                <SelectItem value={Gender.PREFER_NOT_TO_SAY}>Prefer not to say</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+        />
         {errors.gender && (
           <p className="text-sm text-red-600">{errors.gender.message as string}</p>
         )}
@@ -514,14 +536,27 @@ function Step2IdentityAddress({
           <Label htmlFor="district">
             District <span className="text-red-500">*</span>
           </Label>
-          <Select {...register('district')} className={errors.district ? 'border-red-500' : ''}>
-            <option value="">Select district</option>
-            {MALAWI_DISTRICTS.map((district) => (
-              <option key={district} value={district}>
-                {district}
-              </option>
-            ))}
-          </Select>
+          <Controller
+            name="district"
+            control={control}
+            render={({ field }) => (
+              <Select
+                value={field.value}
+                onValueChange={field.onChange}
+              >
+                <SelectTrigger className={errors.district ? 'border-red-500' : ''}>
+                  <SelectValue placeholder="Select district" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MALAWI_DISTRICTS.map((district) => (
+                    <SelectItem key={district} value={district}>
+                      {district}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
           {errors.district && (
             <p className="text-sm text-red-600">{errors.district.message as string}</p>
           )}

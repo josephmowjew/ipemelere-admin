@@ -49,6 +49,12 @@ class DashboardTransformer {
         changeLabel: 'from last month',
         trend: apiData.revenue_change_percent > 0 ? 'up' : apiData.revenue_change_percent < 0 ? 'down' : 'neutral',
       },
+      pendingVehicles: {
+        count: 0, // This would come from API if available
+        changePercent: 0,
+        changeLabel: 'from last week',
+        trend: 'neutral',
+      },
     };
   }
 
@@ -257,6 +263,12 @@ export class DashboardService {
         changePercent: 5,
         changeLabel: 'from last month',
         trend: 'up',
+      },
+      pendingVehicles: {
+        count: 12,
+        changePercent: -8,
+        changeLabel: 'from last week',
+        trend: 'down',
       },
     };
   }

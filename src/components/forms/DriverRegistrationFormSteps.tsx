@@ -6,10 +6,16 @@
 'use client';
 
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { type DriverRegistrationRequest } from '@/types/registration';
 import {
   VEHICLE_TYPES,
@@ -22,9 +28,11 @@ import {
 export function Step3DriverInfo({
   register,
   errors,
+  control,
 }: {
   register: ReturnType<typeof useForm>['register'];
   errors: ReturnType<typeof useForm>['formState']['errors'];
+  control: ReturnType<typeof useForm>['control'];
 }) {
   return (
     <div className="space-y-6">
@@ -49,14 +57,27 @@ export function Step3DriverInfo({
         <Label htmlFor="licenseClass">
           License Class <span className="text-red-500">*</span>
         </Label>
-        <Select {...register('licenseClass')} className={errors.licenseClass ? 'border-red-500' : ''}>
-          <option value="">Select license class</option>
-          {LICENSE_CLASSES.map((license) => (
-            <option key={license.value} value={license.value}>
-              {license.label} - {license.description}
-            </option>
-          ))}
-        </Select>
+        <Controller
+          name="licenseClass"
+          control={control}
+          render={({ field }) => (
+            <Select
+              value={field.value}
+              onValueChange={field.onChange}
+            >
+              <SelectTrigger className={errors.licenseClass ? 'border-red-500' : ''}>
+                <SelectValue placeholder="Select license class" />
+              </SelectTrigger>
+              <SelectContent>
+                {LICENSE_CLASSES.map((license) => (
+                  <SelectItem key={license.value} value={license.value}>
+                    {license.label} - {license.description}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
         {errors.licenseClass && (
           <p className="text-sm text-red-600">{errors.licenseClass.message as string}</p>
         )}
@@ -122,9 +143,11 @@ export function Step3DriverInfo({
 export function Step4VehicleInfo({
   register,
   errors,
+  control,
 }: {
   register: ReturnType<typeof useForm>['register'];
   errors: ReturnType<typeof useForm>['formState']['errors'];
+  control: ReturnType<typeof useForm>['control'];
 }) {
   return (
     <div className="space-y-6">
@@ -220,14 +243,27 @@ export function Step4VehicleInfo({
           <Label htmlFor="vehicleType">
             Vehicle Type <span className="text-red-500">*</span>
           </Label>
-          <Select {...register('vehicleType')} className={errors.vehicleType ? 'border-red-500' : ''}>
-            <option value="">Select vehicle type</option>
-            {VEHICLE_TYPES.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label} - {type.description}
-              </option>
-            ))}
-          </Select>
+          <Controller
+            name="vehicleType"
+            control={control}
+            render={({ field }) => (
+              <Select
+                value={field.value}
+                onValueChange={field.onChange}
+              >
+                <SelectTrigger className={errors.vehicleType ? 'border-red-500' : ''}>
+                  <SelectValue placeholder="Select vehicle type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {VEHICLE_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label} - {type.description}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
           {errors.vehicleType && (
             <p className="text-sm text-red-600">{errors.vehicleType.message as string}</p>
           )}
@@ -291,9 +327,11 @@ export function Step4VehicleInfo({
 export function Step5EmergencyContact({
   register,
   errors,
+  control,
 }: {
   register: ReturnType<typeof useForm>['register'];
   errors: ReturnType<typeof useForm>['formState']['errors'];
+  control: ReturnType<typeof useForm>['control'];
 }) {
   return (
     <div className="space-y-6">
@@ -335,14 +373,27 @@ export function Step5EmergencyContact({
         <Label htmlFor="relationship">
           Relationship <span className="text-red-500">*</span>
         </Label>
-        <Select {...register('relationship')} className={errors.relationship ? 'border-red-500' : ''}>
-          <option value="">Select relationship</option>
-          {EMERGENCY_CONTACT_RELATIONSHIPS.map((rel) => (
-            <option key={rel.value} value={rel.value}>
-              {rel.label}
-            </option>
-          ))}
-        </Select>
+        <Controller
+          name="relationship"
+          control={control}
+          render={({ field }) => (
+            <Select
+              value={field.value}
+              onValueChange={field.onChange}
+            >
+              <SelectTrigger className={errors.relationship ? 'border-red-500' : ''}>
+                <SelectValue placeholder="Select relationship" />
+              </SelectTrigger>
+              <SelectContent>
+                {EMERGENCY_CONTACT_RELATIONSHIPS.map((rel) => (
+                  <SelectItem key={rel.value} value={rel.value}>
+                    {rel.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
         {errors.relationship && (
           <p className="text-sm text-red-600">{errors.relationship.message as string}</p>
         )}

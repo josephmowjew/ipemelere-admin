@@ -6,11 +6,17 @@
 'use client';
 
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { MALAWI_DISTRICTS } from '@/lib/api/types';
 import type { Driver, DriverUpdateData } from '@/lib/api/drivers';
@@ -48,6 +54,7 @@ export function DriverEditForm({
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors }
   } = useForm<DriverEditFormData>({
     defaultValues: {
@@ -141,18 +148,29 @@ export function DriverEditForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="district">District *</Label>
-              <Select
-                {...register('district', { required: 'District is required' })}
-                className={errors.district ? 'border-red-500' : ''}
-                disabled={loading}
-              >
-                <option value="">Select district</option>
-                {MALAWI_DISTRICTS.map((district) => (
-                  <option key={district} value={district}>
-                    {district}
-                  </option>
-                ))}
-              </Select>
+              <Controller
+                name="district"
+                control={control}
+                rules={{ required: 'District is required' }}
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled={loading}
+                  >
+                    <SelectTrigger className={errors.district ? 'border-red-500' : ''}>
+                      <SelectValue placeholder="Select district" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MALAWI_DISTRICTS.map((district) => (
+                        <SelectItem key={district} value={district}>
+                          {district}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
               {errors.district && (
                 <p className="text-sm text-red-600">{errors.district.message}</p>
               )}
@@ -258,18 +276,29 @@ export function DriverEditForm({
 
           <div className="space-y-2">
             <Label htmlFor="emergencyContactRelationship">Relationship</Label>
-            <Select
-              {...register('emergencyContactRelationship')}
-              disabled={loading}
-            >
-              <option value="">Select relationship</option>
-              <option value="parent">Parent</option>
-              <option value="spouse">Spouse</option>
-              <option value="sibling">Sibling</option>
-              <option value="child">Child</option>
-              <option value="friend">Friend</option>
-              <option value="other">Other</option>
-            </Select>
+            <Controller
+              name="emergencyContactRelationship"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  disabled={loading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select relationship" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="parent">Parent</SelectItem>
+                    <SelectItem value="spouse">Spouse</SelectItem>
+                    <SelectItem value="sibling">Sibling</SelectItem>
+                    <SelectItem value="child">Child</SelectItem>
+                    <SelectItem value="friend">Friend</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
         </div>
 

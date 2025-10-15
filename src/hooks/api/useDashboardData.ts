@@ -5,8 +5,9 @@
 
 'use client';
 
-import { useQuery, useQueries, type UseQueryResult } from '@tanstack/react-query';
+import { useQuery, useQueries, useMutation, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api/dashboard';
+import { vehicleAPI, type PendingVehicle } from '@/lib/api/vehicles';
 import {
   DashboardMetrics,
   ActivityItem,
@@ -25,6 +26,8 @@ export const dashboardQueryKeys = {
   systemStatus: () => [...dashboardQueryKeys.all, 'systemStatus'] as const,
   revenueChart: (params?: DashboardQueryParams) => [...dashboardQueryKeys.all, 'revenueChart', params] as const,
   userGrowthChart: (params?: DashboardQueryParams) => [...dashboardQueryKeys.all, 'userGrowthChart', params] as const,
+  pendingVehicles: () => [...dashboardQueryKeys.all, 'pendingVehicles'] as const,
+  pendingVehiclesSummary: () => [...dashboardQueryKeys.all, 'pendingVehiclesSummary'] as const,
   allData: () => [...dashboardQueryKeys.all, 'allData'] as const,
 };
 
@@ -38,6 +41,7 @@ export const useDashboardMetrics = () => {
     refetchOnWindowFocus: true,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    initialData: undefined, // Ensure we start with undefined, not cached data
   });
 };
 
@@ -51,6 +55,8 @@ export const useRecentActivity = (limit: number = 10) => {
     refetchOnWindowFocus: true,
     refetchInterval: 60 * 1000, // Refetch every minute for real-time feel
     retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    initialData: undefined, // Ensure we start with undefined, not cached data
   });
 };
 
@@ -64,6 +70,8 @@ export const useSystemStatus = () => {
     refetchOnWindowFocus: true,
     refetchInterval: 60 * 1000, // Check every minute
     retry: 1, // Don't retry too much for status checks
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    initialData: undefined, // Ensure we start with undefined, not cached data
   });
 };
 
@@ -76,7 +84,9 @@ export const useRevenueChart = (params?: DashboardQueryParams) => {
     gcTime: 30 * 60 * 1000, // 30 minutes
     refetchOnWindowFocus: false, // Don't refetch charts on focus
     retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     enabled: true, // Always enabled, but could be conditional based on params
+    initialData: undefined, // Ensure we start with undefined, not cached data
   });
 };
 
@@ -89,6 +99,46 @@ export const useUserGrowthChart = (params?: DashboardQueryParams) => {
     gcTime: 30 * 60 * 1000, // 30 minutes
     refetchOnWindowFocus: false,
     retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    initialData: undefined, // Ensure we start with undefined, not cached data
+  });
+};
+
+// Hook for pending vehicles
+export const usePendingVehicles = (params: {
+  page?: number;
+  limit?: number;
+  priority?: PendingVehicle['priority'];
+  sortBy?: 'submissionDate' | 'priority' | 'driverName';
+  sortOrder?: 'asc' | 'desc';
+} = {}) => {
+  return useQuery({
+    queryKey: [...dashboardQueryKeys.pendingVehicles(), params], // Include params in query key
+    queryFn: () => vehicleAPI.getPendingVehicles(params),
+    staleTime: 2 * 60 * 1000, // 2 minutes (pending vehicles change frequently)
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true,
+    refetchInterval: 60 * 1000, // Refetch every minute for real-time updates
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    select: (data) => data.data,
+    initialData: undefined, // Ensure we start with undefined, not cached data
+  });
+};
+
+// Hook for pending vehicles summary
+export const usePendingVehiclesSummary = () => {
+  return useQuery({
+    queryKey: dashboardQueryKeys.pendingVehiclesSummary(),
+    queryFn: () => vehicleAPI.getPendingVehiclesSummary(),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true,
+    refetchInterval: 60 * 1000, // Refetch every minute
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    select: (data) => data.data,
+    initialData: undefined, // Ensure we start with undefined, not cached data
   });
 };
 
@@ -216,11 +266,67 @@ export const useRealTimeDashboard = (_interval: number = 30000) => { // 30 secon
   };
 };
 
+// Hook for vehicle approval mutations
+export const useVehicleApprovalMutations = () => {
+  const queryClient = useQueryClient();
+
+  const approveVehicle = useMutation({
+    mutationFn: ({ vehicleId, notes }: { vehicleId: number; notes?: string }) =>
+      vehicleAPI.approveVehicle(vehicleId, { notes }),
+    onSuccess: () => {
+      // Invalidate pending vehicles queries
+      queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.pendingVehicles() });
+      queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.pendingVehiclesSummary() });
+      queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.metrics() });
+    },
+  });
+
+  const rejectVehicle = useMutation({
+    mutationFn: ({ vehicleId, reason, notes }: { vehicleId: number; reason: string; notes?: string }) =>
+      vehicleAPI.rejectVehicle(vehicleId, { reason, notes }),
+    onSuccess: () => {
+      // Invalidate pending vehicles queries
+      queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.pendingVehicles() });
+      queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.pendingVehiclesSummary() });
+      queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.metrics() });
+    },
+  });
+
+  const bulkApproveVehicles = useMutation({
+    mutationFn: ({ vehicleIds, notes }: { vehicleIds: number[]; notes?: string }) =>
+      vehicleAPI.bulkApproveVehicles(vehicleIds, notes),
+    onSuccess: () => {
+      // Invalidate pending vehicles queries
+      queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.pendingVehicles() });
+      queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.pendingVehiclesSummary() });
+      queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.metrics() });
+    },
+  });
+
+  const bulkRejectVehicles = useMutation({
+    mutationFn: ({ vehicleIds, reason, notes }: { vehicleIds: number[]; reason: string; notes?: string }) =>
+      vehicleAPI.bulkRejectVehicles(vehicleIds, reason, notes),
+    onSuccess: () => {
+      // Invalidate pending vehicles queries
+      queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.pendingVehicles() });
+      queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.pendingVehiclesSummary() });
+      queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.metrics() });
+    },
+  });
+
+  return {
+    approveVehicle,
+    rejectVehicle,
+    bulkApproveVehicles,
+    bulkRejectVehicles,
+  };
+};
+
 // Hook for optimistic dashboard updates (useful for real-time features)
 export const useDashboardMutations = () => {
   // This could be extended to include mutations for updating dashboard settings
   // or triggering manual refreshes with optimistic updates
-  
+
   const refreshAll = () => {
     // Manually trigger refetch for all dashboard queries
     // This would typically be called after important actions

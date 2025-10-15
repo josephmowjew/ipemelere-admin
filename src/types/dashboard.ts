@@ -29,11 +29,17 @@ export interface DashboardMetrics {
     changeLabel: string;
     trend: 'up' | 'down' | 'neutral';
   };
+  pendingVehicles: {
+    count: number;
+    changePercent: number;
+    changeLabel: string;
+    trend: 'up' | 'down' | 'neutral';
+  };
 }
 
 export interface ActivityItem {
   id: string;
-  type: 'driver_registered' | 'ride_completed' | 'payment_processed' | 'document_verified' | 'user_registered';
+  type: 'driver_registered' | 'ride_completed' | 'payment_processed' | 'document_verified' | 'user_registered' | 'vehicle_submitted' | 'vehicle_approved' | 'vehicle_rejected';
   title: string;
   description: string;
   timestamp: Date;
@@ -42,6 +48,12 @@ export interface ActivityItem {
   userType?: 'driver' | 'passenger' | 'admin';
   amount?: number;
   currency?: string;
+  vehicleId?: number;
+  vehicleInfo?: {
+    make: string;
+    model: string;
+    plateNumber: string;
+  };
 }
 
 export interface SystemStatus {
@@ -74,6 +86,40 @@ export interface QuickAction {
   icon: string; // Icon name or component identifier
   href: string;
   count?: number; // Optional count for badges (e.g., pending documents)
+}
+
+// Pending vehicles specific interfaces
+export interface PendingVehicleSummary {
+  totalPending: number;
+  urgent: number;
+  submittedToday: number;
+  pendingThisWeek: number;
+  averageDaysPending: number;
+}
+
+export interface PendingVehicleItem {
+  id: number;
+  make: string;
+  model: string;
+  year: number;
+  plateNumber: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  driverName?: string;
+  driverPhone?: string;
+  driverEmail?: string;
+  submissionDate: string;
+  daysPending: number;
+  documentsComplete: boolean;
+  documents?: {
+    registrationDocument?: { status: string; url?: string; expiresAt?: string };
+    insuranceDocument?: { status: string; url?: string; expiresAt?: string };
+    inspectionDocument?: { status: string; url?: string; expiresAt?: string };
+  };
+}
+
+export interface PendingVehiclesData {
+  vehicles: PendingVehicleItem[];
+  summary: PendingVehicleSummary;
 }
 
 export interface DashboardData {

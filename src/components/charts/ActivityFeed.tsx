@@ -26,6 +26,9 @@ const activityIcons = {
   payment_processed: CreditCardIcon,
   document_verified: DocumentCheckIcon,
   user_registered: UserPlusIcon,
+  vehicle_submitted: TruckIcon,
+  vehicle_approved: TruckIcon,
+  vehicle_rejected: TruckIcon,
 };
 
 // Activity type to color mapping
@@ -35,6 +38,9 @@ const activityColors = {
   payment_processed: 'bg-purple-50 text-purple-600 border-purple-200',
   document_verified: 'bg-orange-50 text-orange-600 border-orange-200',
   user_registered: 'bg-indigo-50 text-indigo-600 border-indigo-200',
+  vehicle_submitted: 'bg-yellow-50 text-yellow-600 border-yellow-200',
+  vehicle_approved: 'bg-green-50 text-green-600 border-green-200',
+  vehicle_rejected: 'bg-red-50 text-red-600 border-red-200',
 };
 
 // Loading skeleton for activity items
