@@ -34,7 +34,7 @@ import {
   IdentificationIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
-import { useDriverDetails, useUpdateDriverStatus, useUpdateDriver, useApproveDriverDocument, useRejectDriverDocument, useDownloadDriverDocument } from '@/hooks/api/useDriverData';
+import { useDriverDetails, useUpdateDriverStatus, useUpdateDriver, useApproveDriverDocument, useRejectDriverDocument, useDownloadDriverDocument, useApproveApplication } from '@/hooks/api/useDriverData';
 import { driverAPI, type Driver, type DriverDocument, DriverUpdateData, DriverStatusChangeData } from '@/lib/api/drivers';
 import { useVehiclesByDriver } from '@/hooks/api/useVehicleData';
 import { VehicleStatusManager } from '@/components/vehicle/VehicleStatusManager';
@@ -52,6 +52,8 @@ export default function DriverDetailPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [rejectDialogDocument, setRejectDialogDocument] = useState<DriverDocument | null>(null);
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [approvalNotes, setApprovalNotes] = useState('');
 
   // React Query hooks
   const {
@@ -101,6 +103,7 @@ export default function DriverDetailPage() {
   const approveDocumentMutation = useApproveDriverDocument();
   const rejectDocumentMutation = useRejectDriverDocument();
   const downloadDocumentMutation = useDownloadDriverDocument();
+  const approveApplicationMutation = useApproveApplication();
 
   // Status change handler
   const handleStatusChange = (newStatus: Driver['status'], reason?: string) => {
@@ -143,6 +146,43 @@ export default function DriverDetailPage() {
         });
       }
     });
+  };
+
+  // Application approval handler
+  const handleApplicationApproval = async () => {
+    if (!driver) return;
+
+    try {
+      await approveApplicationMutation.mutateAsync({
+        applicationId: driver.id, // Using driver.id as the applicationId
+        notes: approvalNotes || 'Application approved by admin'
+      });
+
+      toast.success('Application Approved', {
+        description: `${driver.firstName} ${driver.lastName}'s application has been approved and can now start taking rides.`,
+      });
+
+      // Reset dialog state
+      setShowApproveDialog(false);
+      setApprovalNotes('');
+      refetchAll();
+    } catch (error) {
+      console.error('Failed to approve application:', error);
+      toast.error('Approval Failed', {
+        description: 'Failed to approve application. Please try again.',
+      });
+    }
+  };
+
+  // Open approval dialog
+  const handleOpenApprovalDialog = () => {
+    setShowApproveDialog(true);
+  };
+
+  // Cancel approval
+  const handleCancelApproval = () => {
+    setShowApproveDialog(false);
+    setApprovalNotes('');
   };
 
   // Edit handlers
@@ -376,6 +416,19 @@ export default function DriverDetailPage() {
           </Button>
         </div>
       ) : null}
+
+      {/* Application Approval Button */}
+      {driver.applicationStatus != 'approved' && (
+        <Button
+          size="sm"
+          onClick={handleOpenApprovalDialog}
+          className="bg-green-600 hover:bg-green-700"
+          disabled={approveApplicationMutation.isPending}
+        >
+          <CheckCircleIcon className="h-4 w-4 mr-2" />
+          Enable Driver Rides
+        </Button>
+      )}
     </div>
   );
 
@@ -1135,6 +1188,100 @@ export default function DriverDetailPage() {
         onReject={handleDocumentReject}
         isRejecting={rejectDocumentMutation.isPending}
       />
+
+      {/* Application Approval Dialog */}
+      {showApproveDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={handleCancelApproval}
+          />
+
+          {/* Modal Content */}
+          <div className="relative z-10 w-full max-w-md mx-4 bg-white dark:bg-gray-900 rounded-lg shadow-xl">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircleIcon className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Enable Driver Rides
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {driver?.firstName} {driver?.lastName}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              <div className="space-y-4">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <h4 className="font-medium text-yellow-900 mb-2">Important Notice</h4>
+                  <p className="text-sm text-yellow-800">
+                    Approving this application will allow <strong>{driver?.firstName} {driver?.lastName}</strong> to:
+                  </p>
+                  <ul className="mt-2 text-sm text-yellow-800 space-y-1">
+                    <li>• Start accepting ride requests from passengers</li>
+                    <li>• Begin earning money through the platform</li>
+                    <li>• Access all driver features and tools</li>
+                  </ul>
+                  <p className="mt-2 text-sm text-yellow-800 font-medium">
+                    Please ensure all documents have been verified before proceeding.
+                  </p>
+                </div>
+
+                <div>
+                  <label htmlFor="approval-notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Approval Notes (optional)
+                  </label>
+                  <textarea
+                    id="approval-notes"
+                    value={approvalNotes}
+                    onChange={(e) => setApprovalNotes(e.target.value)}
+                    placeholder="Add any notes about this approval..."
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex gap-3">
+              <Button
+                onClick={handleCancelApproval}
+                variant="outline"
+                className="flex-1"
+                disabled={approveApplicationMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleApplicationApproval}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+                disabled={approveApplicationMutation.isPending}
+              >
+                {approveApplicationMutation.isPending ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2"></div>
+                    Approving...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircleIcon className="h-4 w-4 mr-2" />
+                    Approve Application
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </DetailPageLayout>
   );
 }
