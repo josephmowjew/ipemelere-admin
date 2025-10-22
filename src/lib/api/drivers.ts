@@ -39,6 +39,7 @@ export interface Driver {
   totalRides?: number;
   isOnShift?: boolean;
   adminNotes?: string | null;
+  suspensionEndDate?: string;
   vehicleDetails?: {
     id: number;
     make: string;
@@ -141,6 +142,7 @@ export interface DriverUpdateData {
   licenseNumber?: string;
   licenseExpiryDate?: string;
   vehicle?: Partial<Driver['vehicle']>;
+  suspensionEndDate?: string;
 }
 
 export interface DocumentReviewData {
@@ -151,6 +153,7 @@ export interface DocumentReviewData {
 export interface DriverStatusChangeData {
   status: Driver['status'];
   reason?: string;
+  suspensionEndDate?: string;
 }
 
 // Transform backend driver response to frontend format

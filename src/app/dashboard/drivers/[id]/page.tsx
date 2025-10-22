@@ -49,11 +49,14 @@ export default function DriverDetailPage() {
   const driverId = parseInt(params.id as string);
 
   // Local state for modals
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [rejectDialogDocument, setRejectDialogDocument] = useState<DriverDocument | null>(null);
-  const [showApproveDialog, setShowApproveDialog] = useState(false);
-  const [approvalNotes, setApprovalNotes] = useState('');
+   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+   const [rejectDialogDocument, setRejectDialogDocument] = useState<DriverDocument | null>(null);
+   const [showApproveDialog, setShowApproveDialog] = useState(false);
+   const [approvalNotes, setApprovalNotes] = useState('');
+   const [showSuspendDialog, setShowSuspendDialog] = useState(false);
+   const [suspensionEndDate, setSuspensionEndDate] = useState('');
+   const [suspensionReason, setSuspensionReason] = useState('');
 
   // React Query hooks
   const {
@@ -180,10 +183,56 @@ export default function DriverDetailPage() {
   };
 
   // Cancel approval
-  const handleCancelApproval = () => {
-    setShowApproveDialog(false);
-    setApprovalNotes('');
-  };
+   const handleCancelApproval = () => {
+     setShowApproveDialog(false);
+     setApprovalNotes('');
+   };
+
+   // Suspension handlers
+   const handleOpenSuspendDialog = () => {
+     setShowSuspendDialog(true);
+     // Set default suspension end date to 7 days from now
+     const defaultEndDate = new Date();
+     defaultEndDate.setDate(defaultEndDate.getDate() + 7);
+     setSuspensionEndDate(defaultEndDate.toISOString().split('T')[0]);
+   };
+
+   const handleCancelSuspension = () => {
+     setShowSuspendDialog(false);
+     setSuspensionEndDate('');
+     setSuspensionReason('');
+   };
+
+   const handleSuspendDriver = async () => {
+     if (!driver || !suspensionEndDate) return;
+
+     try {
+       // Use the PATCH endpoint for suspension with suspensionEndDate
+       await updateStatusMutation.mutateAsync({
+         id: driver.id,
+         data: {
+           status: 'suspended',
+           reason: suspensionReason || 'Administrative suspension',
+           suspensionEndDate: new Date(suspensionEndDate).toISOString(),
+         }
+       });
+
+       toast.success('Driver Suspended', {
+         description: `${driver.firstName} ${driver.lastName} has been suspended until ${new Date(suspensionEndDate).toLocaleDateString()}.`,
+       });
+
+       // Reset dialog state
+       setShowSuspendDialog(false);
+       setSuspensionEndDate('');
+       setSuspensionReason('');
+       refetchAll();
+     } catch (error) {
+       console.error('Failed to suspend driver:', error);
+       toast.error('Suspension Failed', {
+         description: 'Failed to suspend driver. Please try again.',
+       });
+     }
+   };
 
   // Edit handlers
   const handleEditClick = () => {
@@ -375,7 +424,7 @@ export default function DriverDetailPage() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => handleStatusChange('suspended', 'Administrative action')}
+          onClick={handleOpenSuspendDialog}
           className="text-yellow-600 hover:text-yellow-700"
           disabled={updateStatusMutation.isPending}
         >
@@ -449,9 +498,18 @@ export default function DriverDetailPage() {
               driver.status === 'pending_verification' && 'bg-yellow-100 text-yellow-800'
             )}>
               {driver.status === 'pending_verification' ? 'Pending Verification' :
-               driver.status.charAt(0).toUpperCase() + driver.status.slice(1)}
+               driver.status ? (driver.status.charAt(0).toUpperCase() + driver.status.slice(1)) : 'Unknown'}
             </span>
           </div>
+
+          {driver.status === 'suspended' && driver.suspensionEndDate && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Suspension End Date</span>
+              <span className="text-sm font-medium text-yellow-700">
+                {new Date(driver.suspensionEndDate).toLocaleDateString()}
+              </span>
+            </div>
+          )}
 
           <div className="flex items-center justify-between">
             <span className="text-sm">Email Verification</span>
@@ -1275,6 +1333,115 @@ export default function DriverDetailPage() {
                   <>
                     <CheckCircleIcon className="h-4 w-4 mr-2" />
                     Approve Application
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Suspension Dialog */}
+      {showSuspendDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={handleCancelSuspension}
+          />
+
+          {/* Modal Content */}
+          <div className="relative z-10 w-full max-w-md mx-4 bg-white dark:bg-gray-900 rounded-lg shadow-xl">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Suspend Driver
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {driver?.firstName} {driver?.lastName}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              <div className="space-y-4">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <h4 className="font-medium text-red-900 mb-2">Suspension Notice</h4>
+                  <p className="text-sm text-red-800">
+                    Suspending <strong>{driver?.firstName} {driver?.lastName}</strong> will:
+                  </p>
+                  <ul className="mt-2 text-sm text-red-800 space-y-1">
+                    <li>• Prevent them from accepting new ride requests</li>
+                    <li>• Remove them from the active driver pool</li>
+                    <li>• Keep their account active but restricted</li>
+                  </ul>
+                  <p className="mt-2 text-sm text-red-800 font-medium">
+                    The driver will be automatically reactivated on the selected end date.
+                  </p>
+                </div>
+
+                <div>
+                  <label htmlFor="suspension-end-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Suspension End Date *
+                  </label>
+                  <input
+                    id="suspension-end-date"
+                    type="date"
+                    value={suspensionEndDate}
+                    onChange={(e) => setSuspensionEndDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="suspension-reason" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Suspension Reason (optional)
+                  </label>
+                  <textarea
+                    id="suspension-reason"
+                    value={suspensionReason}
+                    onChange={(e) => setSuspensionReason(e.target.value)}
+                    placeholder="Provide reason for suspension..."
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex gap-3">
+              <Button
+                onClick={handleCancelSuspension}
+                variant="outline"
+                className="flex-1"
+                disabled={updateStatusMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSuspendDriver}
+                className="flex-1 bg-yellow-600 hover:bg-yellow-700"
+                disabled={updateStatusMutation.isPending || !suspensionEndDate}
+              >
+                {updateStatusMutation.isPending ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2"></div>
+                    Suspending...
+                  </>
+                ) : (
+                  <>
+                    <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
+                    Suspend Driver
                   </>
                 )}
               </Button>
