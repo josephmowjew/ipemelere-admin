@@ -30,7 +30,6 @@ export interface TopNavbarProps {
     avatar?: string;
     role: string;
   };
-  notifications?: NotificationItem[];
 }
 
 export interface BreadcrumbProps {

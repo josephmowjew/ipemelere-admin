@@ -46,6 +46,7 @@ export interface ActivityItem {
   userId?: string;
   userName?: string;
   userType?: 'driver' | 'passenger' | 'admin';
+  driverId?: number; // Separate from userId for driver-specific activities
   amount?: number;
   currency?: string;
   vehicleId?: number;
@@ -153,6 +154,7 @@ export interface APIActivityItem {
   user_id?: string;
   user_name?: string;
   user_type?: string;
+  driver_id?: number; // Separate from user_id for driver-specific activities
   amount?: number;
   currency?: string;
 }

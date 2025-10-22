@@ -91,13 +91,6 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     name: 'Notifications',
     href: '/dashboard/notifications',
     icon: BellIcon,
-    disabled: true,
-    comingSoon: true,
-    children: [
-      { id: 'notifications-compose', name: 'Compose', href: '/dashboard/notifications/compose' },
-      { id: 'notifications-templates', name: 'Templates', href: '/dashboard/notifications/templates' },
-      { id: 'notifications-history', name: 'History', href: '/dashboard/notifications/history' },
-    ],
   },
   {
     id: 'settings',

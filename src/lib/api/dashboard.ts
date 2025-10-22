@@ -68,6 +68,7 @@ class DashboardTransformer {
       userId: item.user_id,
       userName: item.user_name,
       userType: item.user_type as ActivityItem['userType'],
+      driverId: item.driver_id, // Include driver_id from API response
       amount: item.amount,
       currency: item.currency,
     }));
@@ -130,7 +131,9 @@ export class DashboardService {
       return DashboardTransformer.transformActivity(response.data);
     } catch (error) {
       console.error('Failed to fetch recent activity:', error);
-      return this.getMockActivity();
+      // Return empty array instead of mock data
+      // The UI will handle the empty state appropriately
+      return [];
     }
   }
 
@@ -273,38 +276,7 @@ export class DashboardService {
     };
   }
 
-  private static getMockActivity(): ActivityItem[] {
-    return [
-      {
-        id: '1',
-        type: 'driver_registered',
-        title: 'New driver registered',
-        description: 'John Banda completed registration',
-        timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-        userName: 'John Banda',
-        userType: 'driver',
-      },
-      {
-        id: '2',
-        type: 'ride_completed',
-        title: 'Ride completed',
-        description: 'Lilongwe to Blantyre',
-        timestamp: new Date(Date.now() - 45 * 60 * 1000), // 45 minutes ago
-        amount: 15000,
-        currency: 'MWK',
-      },
-      {
-        id: '3',
-        type: 'document_verified',
-        title: 'Document verified',
-        description: 'Driver license approved',
-        timestamp: new Date(Date.now() - 60 * 60 * 1000), // 1 hour ago
-        userName: 'Mary Chisomo',
-        userType: 'admin',
-      },
-    ];
-  }
-
+  
   private static getMockSystemStatus(): SystemStatus {
     return {
       apiStatus: 'operational',

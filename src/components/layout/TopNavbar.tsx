@@ -8,9 +8,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
-import { 
-  Bars3Icon, 
-  BellIcon, 
+import { useNotifications } from '@/hooks/useNotifications';
+import {
+  Bars3Icon,
+  BellIcon,
   MagnifyingGlassIcon,
   UserCircleIcon,
   Cog6ToothIcon,
@@ -20,7 +21,9 @@ import { type TopNavbarProps, type NotificationItem, type UserMenuProps } from '
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-export function TopNavbar({ onSidebarToggle, user, notifications = [] }: TopNavbarProps) {
+export function TopNavbar({ onSidebarToggle, user }: TopNavbarProps) {
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+
   return (
     <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-background/80 backdrop-blur-sm px-4 sm:gap-x-6 sm:px-6 lg:px-8">
       <MobileMenuButton onToggle={onSidebarToggle} />
@@ -28,7 +31,12 @@ export function TopNavbar({ onSidebarToggle, user, notifications = [] }: TopNavb
       <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
         <div className="flex flex-1" />
         <div className="flex items-center gap-x-4 lg:gap-x-6">
-          <NotificationDropdown notifications={notifications} />
+          <NotificationDropdown
+            notifications={notifications}
+            unreadCount={unreadCount}
+            onMarkAsRead={markAsRead}
+            onMarkAllAsRead={markAllAsRead}
+          />
           {user && <UserMenu user={user} onSignOut={() => {}} />}
         </div>
       </div>
@@ -98,10 +106,19 @@ function SearchBar() {
 }
 
 // Notification dropdown
-function NotificationDropdown({ notifications }: { notifications: NotificationItem[] }) {
+function NotificationDropdown({
+  notifications,
+  unreadCount,
+  onMarkAsRead,
+  onMarkAllAsRead
+}: {
+  notifications: NotificationItem[];
+  unreadCount: number;
+  onMarkAsRead: (id: string) => void;
+  onMarkAllAsRead: () => void;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const unreadCount = notifications.filter(n => !n.read).length;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -114,6 +131,19 @@ function NotificationDropdown({ notifications }: { notifications: NotificationIt
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Handle notification click - mark as read and navigate if href exists
+  const handleNotificationClick = (notification: NotificationItem) => {
+    if (!notification.read) {
+      onMarkAsRead(notification.id);
+    }
+    setIsOpen(false);
+
+    // Navigate to the notification's href if it exists
+    if (notification.href) {
+      window.location.href = notification.href;
+    }
+  };
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -146,20 +176,33 @@ function NotificationDropdown({ notifications }: { notifications: NotificationIt
               </div>
             ) : (
               notifications.slice(0, 10).map((notification) => (
-                <NotificationItem 
-                  key={notification.id} 
+                <NotificationItem
+                  key={notification.id}
                   notification={notification}
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => handleNotificationClick(notification)}
                 />
               ))
             )}
           </div>
-          
+
           {notifications.length > 0 && (
-            <div className="p-2 border-t border-border">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+            <div className="p-2 border-t border-border space-y-1">
+              {unreadCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-center text-xs"
+                  onClick={() => {
+                    onMarkAllAsRead();
+                    setIsOpen(false);
+                  }}
+                >
+                  Mark All as Read
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
                 className="w-full justify-center"
                 onClick={() => setIsOpen(false)}
               >

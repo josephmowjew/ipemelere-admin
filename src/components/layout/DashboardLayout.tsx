@@ -17,35 +17,15 @@ import { type DashboardLayoutProps, type BreadcrumbItem } from '@/types/layout';
 import { cn } from '@/lib/utils';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
-export function DashboardLayout({ 
-  children, 
-  title, 
-  breadcrumbs = [], 
+export function DashboardLayout({
+  children,
+  title,
+  breadcrumbs = [],
   actions,
-  className 
+  className
 }: DashboardLayoutProps) {
   const { user } = useAuth();
   const { sidebarOpen, sidebarCollapsed, toggleSidebar, collapseSidebar, isMobile } = useLayout();
-
-  // Mock notifications data - in real app, this would come from an API or store
-  const mockNotifications = [
-    {
-      id: '1',
-      title: 'New driver registration',
-      message: 'John Doe has submitted documents for verification',
-      type: 'info' as const,
-      timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
-      read: false,
-    },
-    {
-      id: '2',
-      title: 'System maintenance',
-      message: 'Scheduled maintenance tonight from 11 PM to 12 AM',
-      type: 'warning' as const,
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-      read: true,
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,7 +62,6 @@ export function DashboardLayout({
             avatar: undefined,
             role: user.role
           } : undefined}
-          notifications={mockNotifications}
         />
 
         {/* Page content */}
