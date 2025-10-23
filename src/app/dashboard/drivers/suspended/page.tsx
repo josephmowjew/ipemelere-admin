@@ -1,6 +1,6 @@
 /**
- * Drivers Page - Admin interface for driver management with document review
- * Following ListPageLayout pattern from design document
+ * Suspended Drivers Page - Admin interface for viewing suspended drivers
+ * Similar to main drivers page but with status filter hardcoded to 'suspended'
  */
 
 'use client';
@@ -9,7 +9,7 @@ import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'reac
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ListPageLayout } from '@/components/layout/DashboardLayout';
 import { DriverSearchBar } from '@/components/ui/SearchBar';
-import { StatusFilter, DistrictFilter, FilterDropdown } from '@/components/ui/FilterDropdown';
+import { DistrictFilter, FilterDropdown } from '@/components/ui/FilterDropdown';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,17 +23,14 @@ import {
   CheckCircleIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  UserPlusIcon,
 } from '@heroicons/react/24/outline';
 import { type Driver, type DriverListParams } from '@/lib/api/drivers';
 import { useDrivers, useDriverStats, useExportDrivers } from '@/hooks/api/useDriverData';
 import { MALAWI_DISTRICTS } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
-import { DriverRegistrationModal } from '@/components/modals/DriverRegistrationModal';
 
 interface DriverFilters {
   search: string;
-  status: string[];
   district: string[];
   vehicleType: string[];
   licenseStatus: string[];
@@ -59,13 +56,12 @@ const DOCUMENT_STATUSES = [
   { value: 'expired', label: 'Expired' }
 ];
 
-function DriversPageContent() {
+function SuspendedDriversPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Initialize filters from URL parameters
+  // Initialize filters from URL parameters (excluding status since it's hardcoded)
   const getInitialFilters = useCallback((): DriverFilters => {
-    const urlStatus = searchParams.get('status');
     const urlDistrict = searchParams.get('district');
     const urlVehicleType = searchParams.get('vehicleType');
     const urlLicenseStatus = searchParams.get('licenseStatus');
@@ -74,7 +70,6 @@ function DriversPageContent() {
 
     return {
       search: urlSearch || '',
-      status: urlStatus ? [urlStatus] : [],
       district: urlDistrict ? [urlDistrict] : [],
       vehicleType: urlVehicleType ? [urlVehicleType] : [],
       licenseStatus: urlLicenseStatus ? [urlLicenseStatus] : [],
@@ -85,7 +80,6 @@ function DriversPageContent() {
   const [filters, setFilters] = useState<DriverFilters>(getInitialFilters());
   const [currentPage, setCurrentPage] = useState(1);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [showRegistrationModal, setShowRegistrationModal] = useState(false);
 
   // Update filters when URL parameters change
   useEffect(() => {
@@ -94,17 +88,17 @@ function DriversPageContent() {
     setCurrentPage(1);
   }, [getInitialFilters]);
 
-  // Build query parameters from filters
+  // Build query parameters from filters, with status hardcoded to 'suspended'
   const queryParams: DriverListParams = useMemo(() => ({
     page: currentPage,
-    limit: 50,
+    limit: 20,
     search: filters.search || undefined,
-    status: filters.status[0] as 'active' | 'inactive' | 'suspended' | 'pending_verification' || undefined,
+    status: 'suspended', // Hardcoded to suspended
     district: filters.district[0] || undefined,
     vehicleType: filters.vehicleType[0] as 'sedan' | 'hatchback' | 'suv' | 'minibus' || undefined,
     licenseStatus: filters.licenseStatus[0] as Driver['licenseVerificationStatus'] || undefined,
     verificationStatus: filters.verificationStatus[0] as 'verified' | 'pending' | 'rejected' || undefined,
-  }), [currentPage, filters.search, filters.status, filters.district, filters.vehicleType, filters.licenseStatus, filters.verificationStatus]);
+  }), [currentPage, filters.search, filters.district, filters.vehicleType, filters.licenseStatus, filters.verificationStatus]);
 
   // React Query hooks
   const { data: driverData, isLoading, error } = useDrivers(queryParams);
@@ -131,7 +125,7 @@ function DriversPageContent() {
   });
   const pagination = driverData?.pagination || {
     current_page: 1,
-    per_page: 50,
+    per_page: 20,
     total: 0,
     total_pages: 0,
     has_next_page: false,
@@ -142,16 +136,6 @@ function DriversPageContent() {
   const handleSearch = (query: string) => {
     setFilters(prev => ({ ...prev, search: query }));
     setCurrentPage(1); // Reset to first page when searching
-  };
-
-  const handleStatusChange = (statuses: string[]) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (statuses.length > 0) {
-      params.set('status', statuses[0]);
-    } else {
-      params.delete('status');
-    }
-    router.push(`/dashboard/drivers?${params.toString()}`);
   };
 
   const handleDistrictChange = (districts: string[]) => {
@@ -183,7 +167,7 @@ function DriversPageContent() {
   const handleExport = () => {
     exportMutation.mutate({
       search: filters.search || undefined,
-      status: filters.status[0] as 'active' | 'inactive' | 'suspended' | 'pending_verification' || undefined,
+      status: 'suspended', // Hardcoded to suspended
       district: filters.district[0] || undefined,
       vehicleType: filters.vehicleType[0] as 'sedan' | 'hatchback' | 'suv' | 'minibus' || undefined,
       licenseStatus: filters.licenseStatus[0] as Driver['licenseVerificationStatus'] || undefined,
@@ -198,21 +182,15 @@ function DriversPageContent() {
     </div>
   );
 
-  // Filter bar component
+  // Filter bar component (removed status filter)
   const filterBar = (
     <div className="flex items-center gap-3">
-      <StatusFilter
-        selectedValues={filters.status}
-        onSelectionChange={handleStatusChange}
-        statuses={['active', 'inactive', 'suspended', 'pending_verification']}
-      />
-      
       <DistrictFilter
         selectedValues={filters.district}
         onSelectionChange={handleDistrictChange}
         districts={[...MALAWI_DISTRICTS]}
       />
-      
+
       <FilterDropdown
         label="Vehicle Type"
         options={VEHICLE_TYPES}
@@ -221,7 +199,7 @@ function DriversPageContent() {
         placeholder="All types"
         multiSelect
       />
-      
+
       <FilterDropdown
         label="License Status"
         options={DOCUMENT_STATUSES}
@@ -230,13 +208,20 @@ function DriversPageContent() {
         placeholder="All statuses"
         multiSelect
       />
-      
-      <StatusFilter
+
+      <FilterDropdown
+        label="Verification Status"
+        options={[
+          { value: 'verified', label: 'Verified' },
+          { value: 'pending', label: 'Pending' },
+          { value: 'rejected', label: 'Rejected' }
+        ]}
         selectedValues={filters.verificationStatus}
         onSelectionChange={handleVerificationChange}
-        statuses={['verified', 'pending', 'rejected']}
+        placeholder="All statuses"
+        multiSelect
       />
-      
+
       <Button
         variant="outline"
         size="sm"
@@ -249,35 +234,15 @@ function DriversPageContent() {
     </div>
   );
 
-  // Page actions
+  // Page actions (removed registration modal since suspended drivers are already registered)
   const actions = (
     <div className="flex items-center gap-2">
       <Button
-        onClick={() => setShowRegistrationModal(true)}
-      >
-        <UserPlusIcon className="h-4 w-4 mr-2" />
-        Register New Driver
-      </Button>
-      <Button
         variant="outline"
-        onClick={() => router.push('/dashboard/drivers/suspended')}
+        onClick={() => router.push('/dashboard/drivers')}
       >
-        <DocumentCheckIcon className="h-4 w-4 mr-2" />
-        Suspended Drivers
-      </Button>
-      <Button
-        variant="outline"
-        onClick={() => router.push('/dashboard/drivers/registrations')}
-      >
-        <ClockIcon className="h-4 w-4 mr-2" />
-        Pending Registrations
-      </Button>
-      <Button
-        variant="outline"
-        onClick={() => router.push('/dashboard/drivers/documents/pending')}
-      >
-        <DocumentCheckIcon className="h-4 w-4 mr-2" />
-        Review Documents
+        <TruckIcon className="h-4 w-4 mr-2" />
+        All Drivers
       </Button>
       <Button
         variant="outline"
@@ -296,21 +261,19 @@ function DriversPageContent() {
 
   const breadcrumbs = [
     { label: 'Dashboard', href: '/dashboard' },
-    { label: 'Drivers', href: '/dashboard/drivers', current: true }
+    { label: 'Drivers', href: '/dashboard/drivers' },
+    { label: 'Suspended', href: '/dashboard/drivers/suspended', current: true }
   ];
 
   // Use real stats from API, with fallback to calculated values
   const summaryStats = {
-    total: stats?.totalDrivers ?? pagination.total,
-    active: stats?.activeDrivers ?? drivers.filter(d => d.status === 'active').length,
-    pendingVerification: stats?.pendingVerification ?? drivers.filter(d => d.status === 'pending_verification').length,
-    pendingDocuments: stats?.pendingVerification ?? drivers.filter(d => d.documentVerificationStatus === 'pending').length,
+    total: stats?.suspendedDrivers ?? pagination.total,
     suspended: stats?.suspendedDrivers ?? drivers.filter(d => d.status === 'suspended').length
   };
 
   return (
     <ListPageLayout
-      title="Drivers"
+      title="Suspended Drivers"
       breadcrumbs={breadcrumbs}
       searchBar={searchBar}
       filterBar={filterBar}
@@ -419,12 +382,12 @@ function DriversPageContent() {
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <Card className="p-4">
           <div className="flex items-center">
-            <TruckIcon className="h-8 w-8 text-blue-500" />
+            <TruckIcon className="h-8 w-8 text-red-500" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Total Drivers</p>
+              <p className="text-sm font-medium text-muted-foreground">Suspended Drivers</p>
               <p className="text-2xl font-bold">{summaryStats.total.toLocaleString()}</p>
             </div>
           </div>
@@ -432,30 +395,10 @@ function DriversPageContent() {
 
         <Card className="p-4">
           <div className="flex items-center">
-            <CheckCircleIcon className="h-8 w-8 text-green-500" />
+            <DocumentCheckIcon className="h-8 w-8 text-yellow-500" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Active</p>
-              <p className="text-2xl font-bold">{summaryStats.active.toLocaleString()}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center">
-            <ClockIcon className="h-8 w-8 text-yellow-500" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Pending Verification</p>
-              <p className="text-2xl font-bold">{summaryStats.pendingVerification.toLocaleString()}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center">
-            <DocumentCheckIcon className="h-8 w-8 text-red-500" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Suspended</p>
-              <p className="text-2xl font-bold">{summaryStats.suspended.toLocaleString()}</p>
+              <p className="text-sm font-medium text-muted-foreground">Pending Documents</p>
+              <p className="text-2xl font-bold">{drivers.filter(d => d.documentVerificationStatus === 'pending').length.toLocaleString()}</p>
             </div>
           </div>
         </Card>
@@ -498,7 +441,7 @@ function DriversPageContent() {
               ) : drivers.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="p-8 text-center text-muted-foreground">
-                    No drivers found matching your criteria.
+                    No suspended drivers found matching your criteria.
                   </td>
                 </tr>
               ) : (
@@ -623,9 +566,9 @@ function DriversPageContent() {
             <p className="text-sm text-muted-foreground">
               Showing {((pagination.current_page - 1) * pagination.per_page) + 1} to{' '}
               {Math.min(pagination.current_page * pagination.per_page, pagination.total)} of{' '}
-              {pagination.total} drivers
+              {pagination.total} suspended drivers
             </p>
-            
+
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -635,11 +578,11 @@ function DriversPageContent() {
               >
                 Previous
               </Button>
-              
+
               <span className="text-sm">
                 Page {pagination.current_page} of {pagination.total_pages}
               </span>
-              
+
               <Button
                 variant="outline"
                 size="sm"
@@ -652,25 +595,14 @@ function DriversPageContent() {
           </div>
         )}
       </Card>
-
-      {/* Driver Registration Modal */}
-      <DriverRegistrationModal
-        open={showRegistrationModal}
-        onClose={() => setShowRegistrationModal(false)}
-        onSuccess={(driverId) => {
-          console.log('Driver registered successfully:', driverId);
-          setShowRegistrationModal(false);
-          // Optionally refresh the drivers list or navigate to the new driver's page
-        }}
-      />
     </ListPageLayout>
   );
 }
 
-export default function DriversPage() {
+export default function SuspendedDriversPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <DriversPageContent />
+      <SuspendedDriversPageContent />
     </Suspense>
   );
 }
